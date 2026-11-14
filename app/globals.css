@@ -1,1 +1,52 @@
 @import "tailwindcss";
+
+@keyframes draft-shuffle {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-7px) rotate(-4deg);
+  }
+  50% {
+    transform: translateY(2px) rotate(3deg);
+  }
+  75% {
+    transform: translateY(-4px) rotate(-2deg);
+  }
+}
+
+@keyframes draft-budget-deduction {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.9);
+  }
+  15% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  80% {
+    opacity: 1;
+    transform: translateY(-18px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-28px) scale(0.95);
+  }
+}
+
+.draft-shuffle-card {
+  animation: draft-shuffle 0.65s ease-in-out infinite;
+}
+
+.draft-budget-deduction {
+  animation: draft-budget-deduction 1.3s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .draft-shuffle-card,
+  .draft-budget-deduction {
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+  }
+}

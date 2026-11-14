@@ -1,10 +1,13 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import draftPlayers from '../data/draft-players.json';
 
 const PRESUPUESTO_INICIAL = 100_000_000;
+const DURACION_BARAJADO_MS = 1400;
+const DURACION_ANIMACION_DESCUENTO_MS = 1300;
 const FORMACION = '4-4-2';
 const POSICIONES = ['ARQ', 'DEF', 'MED', 'DEL'] as const;
 const ORDEN_RONDAS: Posicion[] = [
@@ -46,7 +49,7 @@ type JugadorElegido = {
 };
 
 for (const jugador of draftPlayers) {
-  if (jugador.rating < 60 || jugador.rating > 93) {
+  if (jugador.rating < 45 || jugador.rating > 99) {
     throw new Error(`Rating fuera de rango para ${jugador.name}.`);
   }
   if (!Number.isFinite(jugador.price) || jugador.price <= 0) {
@@ -101,12 +104,57 @@ function esAsequible(jugador: Jugador, presupuesto: number) {
   return jugador.price <= presupuesto;
 }
 
+function categoriaCarta(rating: number) {
+  if (rating <= 64) return 'Bronce';
+  if (rating <= 74) return 'Plata';
+  if (rating <= 84) return 'Oro';
+  return 'Especial';
+}
+
+function estiloCarta(rating: number) {
+  if (rating <= 64) {
+    return 'border-orange-300 bg-gradient-to-br from-orange-100 via-amber-300 to-orange-400';
+  }
+  if (rating <= 74) {
+    return 'border-slate-200 bg-gradient-to-br from-white via-slate-200 to-slate-400';
+  }
+  if (rating <= 84) {
+    return 'border-amber-200/80 bg-gradient-to-br from-amber-100 via-yellow-200 to-amber-400';
+  }
+  return 'border-fuchsia-200 bg-gradient-to-br from-rose-200 via-amber-200 to-sky-300';
+}
+
 export default function DraftGame() {
   const [presupuesto, setPresupuesto] = useState(PRESUPUESTO_INICIAL);
   const [equipo, setEquipo] = useState<JugadorElegido[]>([]);
   const [opciones, setOpciones] = useState<Jugador[]>([]);
+  const [opcionesPendientes, setOpcionesPendientes] = useState<Jugador[] | null>(
+    null,
+  );
+  const [descuentoAnimado, setDescuentoAnimado] = useState<number | null>(null);
   const [iniciado, setIniciado] = useState(false);
   const [mensajeCompartir, setMensajeCompartir] = useState('');
+
+  useEffect(() => {
+    if (opcionesPendientes === null) return;
+
+    const timeout = window.setTimeout(() => {
+      setOpciones(opcionesPendientes);
+      setOpcionesPendientes(null);
+    }, DURACION_BARAJADO_MS);
+
+    return () => window.clearTimeout(timeout);
+  }, [opcionesPendientes]);
+
+  useEffect(() => {
+    if (descuentoAnimado === null) return;
+
+    const timeout = window.setTimeout(() => {
+      setDescuentoAnimado(null);
+    }, DURACION_ANIMACION_DESCUENTO_MS);
+
+    return () => window.clearTimeout(timeout);
+  }, [descuentoAnimado]);
 
   const terminado = equipo.length === ORDEN_RONDAS.length;
   const posicionActual = ORDEN_RONDAS[equipo.length];
@@ -119,7 +167,11 @@ export default function DraftGame() {
   const iniciarDraft = () => {
     setEquipo([]);
     setPresupuesto(PRESUPUESTO_INICIAL);
-    setOpciones(repartirOpciones('ARQ', [], PRESUPUESTO_INICIAL));
+    setOpciones([]);
+    setOpcionesPendientes(
+      repartirOpciones('ARQ', [], PRESUPUESTO_INICIAL),
+    );
+    setDescuentoAnimado(null);
     setMensajeCompartir('');
     setIniciado(true);
   };
@@ -134,11 +186,13 @@ export default function DraftGame() {
     const siguientePresupuesto = presupuesto - jugador.price;
     setEquipo(siguienteEquipo);
     setPresupuesto(siguientePresupuesto);
+    setDescuentoAnimado(jugador.price);
+    setOpciones([]);
     setMensajeCompartir('');
 
     if (siguienteEquipo.length < ORDEN_RONDAS.length) {
       const siguientePosicion = ORDEN_RONDAS[siguienteEquipo.length];
-      setOpciones(
+      setOpcionesPendientes(
         repartirOpciones(
           siguientePosicion,
           siguienteEquipo,
@@ -146,7 +200,7 @@ export default function DraftGame() {
         ),
       );
     } else {
-      setOpciones([]);
+      setOpcionesPendientes(null);
     }
   };
 
@@ -203,13 +257,21 @@ export default function DraftGame() {
       <header className="fixed inset-x-0 top-0 z-40 border-b border-slate-700/80 bg-slate-950/95 px-3 py-2.5 shadow-xl backdrop-blur-xl">
         <div className="mx-auto max-w-4xl">
           <div className="flex items-center justify-between gap-3">
-            <div>
+            <div className="relative">
               <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
                 Presupuesto restante
               </p>
               <p className="text-lg font-black tabular-nums text-emerald-300 sm:text-xl">
                 {FORMATO_DINERO.format(presupuesto)}
               </p>
+              {descuentoAnimado && (
+                <span
+                  aria-live="polite"
+                  className="draft-budget-deduction absolute left-0 top-full z-50 whitespace-nowrap text-xs font-black text-rose-400 drop-shadow-[0_1px_4px_rgba(0,0,0,0.9)]"
+                >
+                  −{FORMATO_DINERO.format(descuentoAnimado)}
+                </span>
+              )}
             </div>
             <div className="text-right">
               <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
@@ -410,49 +472,81 @@ export default function DraftGame() {
                 </p>
               </div>
 
-              {sinPresupuesto && (
+              {opcionesPendientes !== null ? (
                 <div
-                  role="alert"
-                  className="mb-4 rounded-xl border border-rose-500/40 bg-rose-950/40 p-4 text-sm text-rose-100"
+                  role="status"
+                  aria-live="polite"
+                  className="py-2 text-center"
                 >
-                  <p className="font-bold">
-                    Ninguna de estas cartas entra en el presupuesto restante.
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+                    {Array.from({ length: 3 }, (_, indice) => (
+                      <div
+                        key={indice}
+                        aria-hidden="true"
+                        style={{ animationDelay: `${indice * 120}ms` }}
+                        className="draft-shuffle-card relative mx-auto flex min-h-64 w-full max-w-[260px] flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-amber-300/70 bg-gradient-to-br from-slate-800 via-slate-900 to-[#4a1425] text-amber-200 shadow-lg"
+                      >
+                        <div className="absolute inset-2 rounded-xl border border-amber-100/20" />
+                        <span className="text-5xl" aria-hidden="true">
+                          ⚽
+                        </span>
+                        <span className="mt-3 text-[10px] font-black uppercase tracking-[0.25em]">
+                          QUEPARTIDO
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-4 text-sm font-bold uppercase tracking-wider text-amber-200">
+                    Barajando las opciones…
                   </p>
-                  <p className="mt-1 text-rose-200/80">
-                    Vas a tener que administrar mejor el pozo en un nuevo draft.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={iniciarDraft}
-                    className="mt-3 rounded-lg bg-rose-700 px-4 py-2 text-xs font-black uppercase tracking-wider text-white hover:bg-rose-600"
-                  >
-                    Reiniciar draft
-                  </button>
                 </div>
-              )}
-
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
-                {opciones.map((jugador) => {
-                  const asequible = esAsequible(jugador, presupuesto);
-                  return (
-                    <button
-                      key={jugador.id}
-                      type="button"
-                      disabled={!asequible}
-                      onClick={() => elegirJugador(jugador)}
-                      aria-label={`${jugador.name}, ${jugador.position}, rating ${jugador.rating}, ${FORMATO_DINERO.format(jugador.price)}${
-                        asequible ? '' : ', fuera de presupuesto'
-                      }`}
-                      className="group text-left disabled:cursor-not-allowed"
+              ) : (
+                <>
+                  {sinPresupuesto && (
+                    <div
+                      role="alert"
+                      className="mb-4 rounded-xl border border-rose-500/40 bg-rose-950/40 p-4 text-sm text-rose-100"
                     >
-                      <CartaJugador
-                        jugador={jugador}
-                        asequible={asequible}
-                      />
-                    </button>
-                  );
-                })}
-              </div>
+                      <p className="font-bold">
+                        Ninguna de estas cartas entra en el presupuesto restante.
+                      </p>
+                      <p className="mt-1 text-rose-200/80">
+                        Vas a tener que administrar mejor el pozo en un nuevo draft.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={iniciarDraft}
+                        className="mt-3 rounded-lg bg-rose-700 px-4 py-2 text-xs font-black uppercase tracking-wider text-white hover:bg-rose-600"
+                      >
+                        Reiniciar draft
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+                    {opciones.map((jugador) => {
+                      const asequible = esAsequible(jugador, presupuesto);
+                      return (
+                        <button
+                          key={jugador.id}
+                          type="button"
+                          disabled={!asequible}
+                          onClick={() => elegirJugador(jugador)}
+                          aria-label={`${jugador.name}, ${jugador.position}, rating ${jugador.rating}, ${FORMATO_DINERO.format(jugador.price)}${
+                            asequible ? '' : ', fuera de presupuesto'
+                          }`}
+                          className="group text-left disabled:cursor-not-allowed"
+                        >
+                          <CartaJugador
+                            jugador={jugador}
+                            asequible={asequible}
+                          />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
             </section>
           )}
         </div>
@@ -470,10 +564,16 @@ function CartaJugador({
 }) {
   return (
     <div
-      className={`relative mx-auto flex min-h-64 w-full max-w-[260px] flex-col justify-between overflow-hidden rounded-2xl border p-4 text-slate-950 shadow-lg transition-transform group-hover:scale-[1.02] ${
-        asequible
-          ? 'border-amber-200/80 bg-gradient-to-br from-amber-100 via-yellow-200 to-amber-400'
-          : 'border-slate-600 bg-gradient-to-br from-slate-400 via-slate-500 to-slate-700 text-slate-950 opacity-60'
+      style={
+        jugador.rating >= 85
+          ? {
+              backgroundImage:
+                'linear-gradient(135deg, #fda4af 0%, #fde68a 24%, #86efac 48%, #7dd3fc 72%, #c4b5fd 100%)',
+            }
+          : undefined
+      }
+      className={`relative mx-auto flex min-h-64 w-full max-w-[260px] flex-col justify-between overflow-hidden rounded-2xl border p-4 text-slate-950 shadow-lg transition-transform group-hover:scale-[1.02] ${estiloCarta(jugador.rating)} ${
+        asequible ? '' : 'opacity-60'
       }`}
     >
       <div className="absolute inset-2 rounded-xl border border-slate-950/15" />
@@ -484,37 +584,50 @@ function CartaJugador({
             {jugador.position}
           </p>
         </div>
-        <span className="text-3xl" aria-hidden="true">
-          ⚽
+        <span className="rounded-full border border-slate-950/20 bg-white/40 px-2 py-1 text-[9px] font-black uppercase tracking-wider">
+          {categoriaCarta(jugador.rating)}
         </span>
       </div>
       <div className="relative py-4 text-center">
         <p className="text-lg font-black leading-tight">{jugador.name}</p>
+        <Image
+          src="/escudo-lanus-2025.png"
+          alt=""
+          width={56}
+          height={57}
+          className="mx-auto mt-1 h-14 w-14 object-contain drop-shadow-sm"
+        />
         <p className="mt-1 text-[10px] font-black uppercase tracking-[0.2em] opacity-70">
           Club Atlético Lanús
         </p>
       </div>
-      <div className="relative grid grid-cols-3 gap-1 border-t border-slate-950/20 pt-2 text-center">
-        <EstadisticaCarta
-          etiqueta="Precio"
-          valor={FORMATO_DINERO.format(jugador.price)}
-        />
-        <EstadisticaCarta
-          etiqueta="Partidos"
-          valor={
-            jugador.matches !== null && jugador.matches > 0
-              ? jugador.matches.toLocaleString('es-AR')
-              : 'S/D'
-          }
-        />
-        <EstadisticaCarta
-          etiqueta="Goles"
-          valor={
-            jugador.goals !== null
-              ? jugador.goals.toLocaleString('es-AR')
-              : 'S/D'
-          }
-        />
+      <div className="relative border-t border-slate-950/20 pt-2 text-center">
+        <div className="rounded-lg bg-white/35 px-2 py-1.5">
+          <p className="text-[9px] font-black uppercase tracking-wider opacity-70">
+            Precio
+          </p>
+          <p className="whitespace-nowrap text-xl font-black leading-tight sm:text-2xl">
+            {FORMATO_DINERO.format(jugador.price)}
+          </p>
+        </div>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <EstadisticaCarta
+            etiqueta="Partidos"
+            valor={
+              jugador.matches !== null && jugador.matches > 0
+                ? jugador.matches.toLocaleString('es-AR')
+                : 'S/D'
+            }
+          />
+          <EstadisticaCarta
+            etiqueta="Goles"
+            valor={
+              jugador.goals !== null
+                ? jugador.goals.toLocaleString('es-AR')
+                : 'S/D'
+            }
+          />
+        </div>
       </div>
       {!asequible && (
         <p className="relative mt-2 text-center text-[10px] font-black uppercase tracking-wider">
