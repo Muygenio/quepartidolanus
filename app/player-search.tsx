@@ -84,7 +84,7 @@ export default function PlayerSearch({
           id="sugerencias-jugadores"
           role="listbox"
           aria-label="Jugadores coincidentes"
-          className="absolute inset-x-0 bottom-full mb-2 max-h-[40dvh] overflow-y-auto rounded-xl border border-slate-700 bg-slate-900 p-1.5 shadow-2xl"
+          className="absolute inset-x-0 bottom-full mb-2 max-h-[40dvh] overflow-y-auto rounded-xl border border-[#57132b] bg-[#13090e] p-1.5 shadow-2xl"
         >
           {sugerencias.length > 0 ? (
             sugerencias.map((jugador, indice) => (
@@ -99,7 +99,7 @@ export default function PlayerSearch({
                 className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-left text-sm font-semibold transition-colors ${
                   indice === indiceActivo
                     ? 'bg-[#800020] text-white'
-                    : 'text-slate-100 hover:bg-slate-800'
+                    : 'text-slate-100 hover:bg-[#2b0c18]'
                 }`}
               >
                 <span>{jugador.nombre}</span>
@@ -148,7 +148,7 @@ export default function PlayerSearch({
           onKeyDown={manejarTecla}
           disabled={disabled}
           placeholder={placeholder}
-          className="w-full rounded-2xl border-2 border-slate-700 bg-slate-900 py-3.5 pl-12 pr-4 text-left text-base font-bold text-white shadow-inner transition-all placeholder:font-medium placeholder:text-slate-500 focus:border-[#800020] focus:outline-none disabled:opacity-60 sm:text-lg"
+          className="w-full rounded-2xl border-2 border-[#4c1428] bg-[#13090e] py-3.5 pl-12 pr-4 text-left text-base font-bold text-white shadow-inner transition-all placeholder:font-medium placeholder:text-slate-500 focus:border-[#a91f4b] focus:outline-none disabled:opacity-60 sm:text-lg"
         />
       </div>
     </div>

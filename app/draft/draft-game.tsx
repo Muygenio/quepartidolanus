@@ -254,14 +254,14 @@ export default function DraftGame() {
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-40 border-b border-slate-700/80 bg-slate-950/95 px-3 py-2.5 shadow-xl backdrop-blur-xl">
+      <header className="fixed inset-x-0 top-0 z-40 border-b border-[#57132b]/80 bg-[#0c070a]/95 px-3 py-2.5 shadow-xl backdrop-blur-xl">
         <div className="mx-auto max-w-4xl">
           <div className="flex items-center justify-between gap-3">
             <div className="relative">
               <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
                 Presupuesto restante
               </p>
-              <p className="text-lg font-black tabular-nums text-emerald-300 sm:text-xl">
+              <p className="text-lg font-black tabular-nums text-rose-100 sm:text-xl">
                 {FORMATO_DINERO.format(presupuesto)}
               </p>
               {descuentoAnimado && (
@@ -293,7 +293,7 @@ export default function DraftGame() {
               return (
                 <div
                   key={posicion}
-                  className="rounded-md border border-slate-800 bg-slate-900 px-1.5 py-1 text-center text-[10px] font-bold text-slate-300 sm:text-xs"
+                  className="rounded-md border border-[#411123] bg-[#180a10] px-1.5 py-1 text-center text-[10px] font-bold text-slate-200 sm:text-xs"
                 >
                   {posicion} {cantidad}/{CUPOS[posicion]}
                 </div>
@@ -303,17 +303,17 @@ export default function DraftGame() {
         </div>
       </header>
 
-      <main className="min-h-dvh bg-slate-950 px-3 pb-10 pt-28 font-sans text-white sm:px-6 sm:pt-32">
-        <div className="mx-auto w-full max-w-4xl">
+      <main className="lanus-watermark relative min-h-dvh bg-[#080609] px-3 pb-10 pt-28 font-sans text-white sm:px-6 sm:pt-32">
+        <div className="relative z-10 mx-auto w-full max-w-4xl">
           <Link
             href="/"
-            className="mb-4 inline-flex text-sm font-bold text-slate-300 transition-colors hover:text-white"
+            className="mb-4 inline-flex rounded-lg border border-[#57132b]/70 bg-[#210a13]/70 px-3 py-2 text-sm font-bold text-slate-200 transition-colors hover:bg-[#3a0c1d]"
           >
-            ← Volver a la trivia
+            ← Elegir modo
           </Link>
 
           <header className="mb-5">
-            <p className="text-xs font-black uppercase tracking-[0.2em] text-amber-300">
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-rose-200">
               QUEPARTIDO · Draft histórico
             </p>
             <h1 className="mt-1 text-2xl font-black uppercase tracking-wide sm:text-4xl">
@@ -357,7 +357,7 @@ export default function DraftGame() {
                         <div
                           className={`flex h-9 w-9 items-center justify-center rounded-full border-2 text-xs font-black shadow-md sm:h-12 sm:w-12 ${
                             jugador
-                              ? 'border-amber-200 bg-gradient-to-br from-amber-100 to-amber-400 text-slate-950'
+                              ? 'border-rose-100 bg-gradient-to-br from-rose-100 to-[#9c1b42] text-white'
                               : 'border-dashed border-white/40 bg-slate-950/40 text-white/70'
                           }`}
                         >
@@ -375,7 +375,7 @@ export default function DraftGame() {
           </section>
 
           {!iniciado ? (
-            <section className="rounded-2xl border border-slate-800 bg-slate-900 p-5 text-center sm:p-7">
+            <section className="rounded-2xl border border-[#4d1428] bg-[#150a10] p-5 text-center sm:p-7">
               <h2 className="text-lg font-black uppercase tracking-wide">
                 Draft 4-4-2
               </h2>
@@ -384,36 +384,36 @@ export default function DraftGame() {
                 En cada ronda vas a recibir tres cartas al azar. Las que superen
                 tu presupuesto quedan bloqueadas.
               </p>
-              <p className="mt-3 text-sm font-bold text-emerald-200">
+              <p className="mt-3 text-sm font-bold text-rose-100">
                 Pozo inicial: {FORMATO_DINERO.format(PRESUPUESTO_INICIAL)}
               </p>
               <button
                 type="button"
                 onClick={iniciarDraft}
-                className="mt-5 rounded-xl bg-amber-400 px-6 py-3 text-sm font-black uppercase tracking-wider text-slate-950 shadow-lg transition-colors hover:bg-amber-300"
+                className="mt-5 rounded-xl bg-[#8d1238] px-6 py-3 text-sm font-black uppercase tracking-wider text-white shadow-lg shadow-[#8d1238]/20 transition-colors hover:bg-[#a21b46]"
               >
                 Empezar draft
               </button>
             </section>
           ) : terminado ? (
-            <section className="rounded-2xl border border-amber-300/40 bg-gradient-to-br from-slate-900 to-amber-950/40 p-5 text-center shadow-xl sm:p-8">
-              <p className="text-xs font-black uppercase tracking-[0.2em] text-amber-300">
+            <section className="rounded-2xl border border-[#7d1b3c]/60 bg-gradient-to-br from-[#180a10] to-[#3a0c1d]/80 p-5 text-center shadow-xl sm:p-8">
+              <p className="text-xs font-black uppercase tracking-[0.2em] text-rose-200">
                 Plantel completo · {FORMACION}
               </p>
               <h2 className="mt-2 text-2xl font-black uppercase sm:text-3xl">
                 ¡Plantel armado con éxito!
               </h2>
               <div className="mx-auto mt-5 grid max-w-lg grid-cols-2 gap-3">
-                <div className="rounded-xl border border-slate-700 bg-slate-950/70 p-4">
-                  <p className="text-3xl font-black text-amber-300">
+                <div className="rounded-xl border border-[#4c1428] bg-black/40 p-4">
+                  <p className="text-3xl font-black text-white">
                     {promedio.toFixed(1)}
                   </p>
                   <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                     Media del equipo
                   </p>
                 </div>
-                <div className="rounded-xl border border-slate-700 bg-slate-950/70 p-4">
-                  <p className="text-xl font-black text-emerald-300 sm:text-2xl">
+                <div className="rounded-xl border border-[#4c1428] bg-black/40 p-4">
+                  <p className="text-xl font-black text-rose-200 sm:text-2xl">
                     {FORMATO_DINERO.format(presupuesto)}
                   </p>
                   <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
@@ -425,7 +425,7 @@ export default function DraftGame() {
                 <button
                   type="button"
                   onClick={copiarEquipo}
-                  className="rounded-xl bg-amber-400 px-5 py-3 text-sm font-black uppercase tracking-wider text-slate-950 transition-colors hover:bg-amber-300"
+                  className="rounded-xl bg-[#8d1238] px-5 py-3 text-sm font-black uppercase tracking-wider text-white transition-colors hover:bg-[#a21b46]"
                 >
                   Copiar equipo
                 </button>
@@ -435,26 +435,26 @@ export default function DraftGame() {
                   )}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="rounded-xl border border-emerald-500/50 bg-emerald-500/15 px-5 py-3 text-sm font-black uppercase tracking-wider text-emerald-100 transition-colors hover:bg-emerald-500/25"
+                  className="rounded-xl border border-[#7d1b3c] bg-[#360d1d] px-5 py-3 text-sm font-black uppercase tracking-wider text-rose-100 transition-colors hover:bg-[#50112a]"
                 >
                   Compartir por WhatsApp
                 </a>
                 <button
                   type="button"
                   onClick={iniciarDraft}
-                  className="rounded-xl border border-slate-600 px-5 py-3 text-sm font-black uppercase tracking-wider text-slate-200 transition-colors hover:bg-slate-800"
+                  className="rounded-xl border border-[#57132b] px-5 py-3 text-sm font-black uppercase tracking-wider text-slate-200 transition-colors hover:bg-[#210a13]"
                 >
                   Nuevo draft
                 </button>
               </div>
               {mensajeCompartir && (
-                <p role="status" className="mt-3 text-sm text-emerald-200">
+                <p role="status" className="mt-3 text-sm text-rose-100">
                   {mensajeCompartir}
                 </p>
               )}
             </section>
           ) : (
-            <section className="rounded-2xl border border-slate-800 bg-slate-900/90 p-4 sm:p-6">
+            <section className="rounded-2xl border border-[#411123] bg-[#13090e]/95 p-4 sm:p-6">
               <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -484,9 +484,9 @@ export default function DraftGame() {
                         key={indice}
                         aria-hidden="true"
                         style={{ animationDelay: `${indice * 120}ms` }}
-                        className="draft-shuffle-card relative mx-auto flex min-h-64 w-full max-w-[260px] flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-amber-300/70 bg-gradient-to-br from-slate-800 via-slate-900 to-[#4a1425] text-amber-200 shadow-lg"
+                        className="draft-shuffle-card relative mx-auto flex min-h-64 w-full max-w-[260px] flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-[#8d2346]/80 bg-gradient-to-br from-[#260b16] via-[#13090e] to-[#4a1425] text-rose-100 shadow-lg"
                       >
-                        <div className="absolute inset-2 rounded-xl border border-amber-100/20" />
+                        <div className="absolute inset-2 rounded-xl border border-rose-100/20" />
                         <span className="text-5xl" aria-hidden="true">
                           ⚽
                         </span>
@@ -496,7 +496,7 @@ export default function DraftGame() {
                       </div>
                     ))}
                   </div>
-                  <p className="mt-4 text-sm font-bold uppercase tracking-wider text-amber-200">
+                  <p className="mt-4 text-sm font-bold uppercase tracking-wider text-rose-200">
                     Barajando las opciones…
                   </p>
                 </div>

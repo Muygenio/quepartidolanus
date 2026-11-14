@@ -1,5 +1,22 @@
 @import "tailwindcss";
 
+.lanus-watermark {
+  isolation: isolate;
+}
+
+.lanus-watermark::before {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image: url("/escudo-lanus-2025.png");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: min(86vw, 760px);
+  content: "";
+  opacity: 0.055;
+  pointer-events: none;
+}
+
 @keyframes draft-shuffle {
   0%,
   100% {

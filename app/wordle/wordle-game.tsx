@@ -488,16 +488,16 @@ export default function WordleGame() {
   };
 
   return (
-    <main className="min-h-dvh bg-slate-950 px-3 py-5 font-sans text-white sm:px-6 sm:py-8">
-      <div className="mx-auto w-full max-w-2xl">
+    <main className="lanus-watermark relative min-h-dvh bg-[#080609] px-3 py-5 font-sans text-white sm:px-6 sm:py-8">
+      <div className="relative z-10 mx-auto w-full max-w-2xl">
         <Link
           href="/"
-          className="mb-4 inline-flex items-center gap-2 text-sm font-bold text-slate-300 transition-colors hover:text-white"
+          className="mb-4 inline-flex items-center gap-2 rounded-lg border border-[#57132b]/70 bg-[#210a13]/70 px-3 py-2 text-sm font-bold text-slate-200 transition-colors hover:bg-[#3a0c1d]"
         >
-          <span aria-hidden="true">←</span> Trivia de formaciones
+          <span aria-hidden="true">←</span> Elegir modo
         </Link>
 
-        <header className="mb-5 overflow-hidden rounded-2xl border border-slate-700/70 bg-gradient-to-br from-slate-900 via-slate-900 to-[#271019] p-5 shadow-xl sm:p-7">
+        <header className="mb-5 overflow-hidden rounded-2xl border border-[#65132f]/80 bg-gradient-to-br from-[#17070e] via-[#310a1a] to-[#10070b] p-5 shadow-xl sm:p-7">
           <p className="text-xs font-black uppercase tracking-[0.2em] text-rose-300">
             QUEPARTIDO · Desafío diario
           </p>
@@ -509,7 +509,7 @@ export default function WordleGame() {
             partidos y goles. Tenés {MAX_INTENTOS} intentos.
           </p>
           {fecha && (
-            <p className="mt-4 inline-flex rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-1.5 font-mono text-sm text-slate-200">
+            <p className="mt-4 inline-flex rounded-lg border border-[#58132b]/70 bg-black/40 px-3 py-1.5 font-mono text-sm text-slate-200">
               {fecha}
             </p>
           )}
@@ -518,7 +518,7 @@ export default function WordleGame() {
         {mensajeAlmacenamiento && (
           <p
             role="status"
-            className="mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100"
+            className="mb-4 rounded-xl border border-[#7d1b3c]/50 bg-[#340b1c]/60 px-4 py-3 text-sm text-rose-100"
           >
             {mensajeAlmacenamiento}
           </p>
@@ -526,7 +526,7 @@ export default function WordleGame() {
 
         {!listo || !partida || !jugadorDelDia ? (
           <div
-            className="rounded-2xl border border-slate-800 bg-slate-900 p-6 text-center text-slate-300"
+            className="rounded-2xl border border-[#411123] bg-[#13090e]/95 p-6 text-center text-slate-300"
             role="status"
           >
             Cargando el desafío...
@@ -535,13 +535,13 @@ export default function WordleGame() {
           <>
             <section
               aria-label="Intentos del desafío"
-              className="mb-5 rounded-2xl border border-slate-800 bg-slate-900/80 p-4 sm:p-5"
+              className="mb-5 rounded-2xl border border-[#411123] bg-[#13090e]/90 p-4 sm:p-5"
             >
               <div className="mb-4 flex items-center justify-between gap-3">
                 <h2 className="text-sm font-black uppercase tracking-wider text-slate-200">
                   Tus intentos
                 </h2>
-                <span className="rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1 font-mono text-sm font-bold text-slate-200">
+                <span className="rounded-lg border border-[#4c1428] bg-black/50 px-2.5 py-1 font-mono text-sm font-bold text-slate-200">
                   {partida.intentos.length} / {MAX_INTENTOS}
                 </span>
               </div>
@@ -580,7 +580,7 @@ export default function WordleGame() {
                   return (
                     <div
                       key={`${nombre}-${indice}`}
-                      className="rounded-xl border border-slate-800 bg-slate-950/70 p-3"
+                      className="rounded-xl border border-[#38101f] bg-black/45 p-3"
                     >
                       <p className="mb-2 truncate text-sm font-bold text-white">
                         {indice + 1}. {jugador.nombre}
@@ -628,7 +628,7 @@ export default function WordleGame() {
                   );
                 })}
                 {partida.intentos.length === 0 && (
-                  <p className="rounded-xl border border-dashed border-slate-700 px-4 py-6 text-center text-sm text-slate-400">
+                  <p className="rounded-xl border border-dashed border-[#4c1428] px-4 py-6 text-center text-sm text-slate-400">
                     Tus intentos y pistas van a aparecer acá.
                   </p>
                 )}
@@ -638,8 +638,8 @@ export default function WordleGame() {
                 <p
                   className={`mt-4 rounded-xl border px-4 py-3 text-sm font-bold ${
                     partida.victoria
-                      ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200'
-                      : 'border-rose-500/30 bg-rose-500/10 text-rose-200'
+                      ? 'border-[#a9214d]/50 bg-[#68112c]/50 text-rose-100'
+                      : 'border-[#57132b]/60 bg-black/40 text-rose-200'
                   }`}
                   role="status"
                 >
@@ -652,7 +652,7 @@ export default function WordleGame() {
 
             <form
               onSubmit={enviarIntento}
-              className="mb-5 rounded-2xl border border-slate-800 bg-slate-900/80 p-4 sm:p-5"
+              className="mb-5 rounded-2xl border border-[#411123] bg-[#13090e]/90 p-4 sm:p-5"
             >
               <label
                 htmlFor="wordle-buscador"
@@ -702,11 +702,11 @@ export default function WordleGame() {
             </section>
 
             {partida.intentos.length > 0 && (
-              <section className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 text-center sm:p-5">
+              <section className="rounded-2xl border border-[#411123] bg-[#13090e]/90 p-4 text-center sm:p-5">
                 <button
                   type="button"
                   onClick={compartirResultado}
-                  className="rounded-xl border border-emerald-500/50 bg-emerald-500/15 px-5 py-3 text-sm font-black uppercase tracking-wider text-emerald-100 transition-colors hover:bg-emerald-500/25"
+                  className="rounded-xl border border-[#7d1b3c] bg-[#360d1d] px-5 py-3 text-sm font-black uppercase tracking-wider text-rose-100 transition-colors hover:bg-[#50112a]"
                 >
                   Compartir resultado
                 </button>
@@ -797,7 +797,7 @@ function PlayerAutocomplete({
           id="wordle-sugerencias"
           role="listbox"
           aria-label="Jugadores"
-          className="absolute inset-x-0 bottom-full z-20 mb-2 max-h-[45dvh] overflow-y-auto rounded-xl border border-slate-700 bg-slate-900 p-1.5 shadow-2xl"
+          className="absolute inset-x-0 bottom-full z-20 mb-2 max-h-[45dvh] overflow-y-auto rounded-xl border border-[#57132b] bg-[#13090e] p-1.5 shadow-2xl"
         >
           {sugerencias.length ? (
             sugerencias.map((jugador, indice) => (
@@ -815,7 +815,7 @@ function PlayerAutocomplete({
                 className={`w-full rounded-lg px-3 py-2.5 text-left text-sm font-semibold transition-colors ${
                   indice === indiceActivo
                     ? 'bg-[#800020] text-white'
-                    : 'text-slate-100 hover:bg-slate-800'
+                    : 'text-slate-100 hover:bg-[#2b0c18]'
                 }`}
               >
                 {jugador.nombre}
@@ -851,7 +851,7 @@ function PlayerAutocomplete({
         onKeyDown={manejarTecla}
         disabled={deshabilitado}
         placeholder="Escribí nombre o apellido..."
-        className="w-full rounded-xl border-2 border-slate-700 bg-slate-950 px-4 py-3 text-base font-semibold text-white outline-none transition-colors placeholder:font-normal placeholder:text-slate-500 focus:border-[#800020] disabled:opacity-50"
+        className="w-full rounded-xl border-2 border-[#4c1428] bg-[#0b0709] px-4 py-3 text-base font-semibold text-white outline-none transition-colors placeholder:font-normal placeholder:text-slate-500 focus:border-[#a91f4b] disabled:opacity-50"
       />
     </div>
   );
@@ -891,7 +891,7 @@ function Pista({
 
 function Estadistica({ etiqueta, valor }: { etiqueta: string; valor: number }) {
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900 px-3 py-4 text-center">
+    <div className="rounded-xl border border-[#411123] bg-[#160a10] px-3 py-4 text-center">
       <p className="text-2xl font-black tabular-nums text-white">{valor}</p>
       <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
         {etiqueta}
