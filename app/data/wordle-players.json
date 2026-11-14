@@ -1,0 +1,140 @@
+[
+  {
+    "nombre": "Nahuel Losada",
+    "alias": ["nahuel losada", "losada"],
+    "posiciones": ["ARQ"],
+    "temporadas": [2025, 2026]
+  },
+  {
+    "nombre": "Tomas Guidara",
+    "alias": ["tomas guidara", "guidara"],
+    "posiciones": ["LD"],
+    "temporadas": [2026]
+  },
+  {
+    "nombre": "Carlos Izquierdoz",
+    "alias": ["carlos izquierdoz", "izquierdoz"],
+    "posiciones": ["DFC"],
+    "temporadas": [2025, 2026]
+  },
+  {
+    "nombre": "José Canale",
+    "alias": ["jose canale", "canale"],
+    "posiciones": ["DFC"],
+    "temporadas": [2025, 2026]
+  },
+  {
+    "nombre": "Sasha Marcich",
+    "alias": ["sasha marcich", "marcich"],
+    "posiciones": ["LI"],
+    "temporadas": [2025, 2026]
+  },
+  {
+    "nombre": "Eduardo Salvio",
+    "alias": ["eduardo salvio", "salvio"],
+    "posiciones": ["MD", "ED"],
+    "temporadas": [2025, 2026]
+  },
+  {
+    "nombre": "Agustín Medina",
+    "alias": ["agustin medina", "medina"],
+    "posiciones": ["MC", "MCD"],
+    "temporadas": [2025, 2026]
+  },
+  {
+    "nombre": "Agustín Cardozo",
+    "alias": ["agustin cardozo", "cardozo"],
+    "posiciones": ["MC", "MCD"],
+    "temporadas": [2025, 2026]
+  },
+  {
+    "nombre": "Ramiro Carrera",
+    "alias": ["ramiro carrera", "carrera"],
+    "posiciones": ["MI", "EI"],
+    "temporadas": [2025, 2026]
+  },
+  {
+    "nombre": "Marcelino Moreno",
+    "alias": ["marcelino", "moreno", "marcelino moreno"],
+    "posiciones": ["DC", "MCO"],
+    "temporadas": [2025, 2026]
+  },
+  {
+    "nombre": "Rodrigo Castillo",
+    "alias": ["rodrigo castillo", "castillo"],
+    "posiciones": ["DC"],
+    "temporadas": [2025, 2026]
+  },
+  {
+    "nombre": "Gonzalo Pérez",
+    "alias": ["gonzalo perez", "perez"],
+    "posiciones": ["LD"],
+    "temporadas": [2025]
+  },
+  {
+    "nombre": "Fernando Monetti",
+    "alias": ["monetti", "mono"],
+    "posiciones": ["ARQ"],
+    "temporadas": [2016]
+  },
+  {
+    "nombre": "José Luis Gómez",
+    "alias": ["jose luis gomez", "laucha gomez"],
+    "posiciones": ["LD"],
+    "temporadas": [2016]
+  },
+  {
+    "nombre": "Gustavo Gómez",
+    "alias": ["gustavo gomez", "gomez"],
+    "posiciones": ["DFC"],
+    "temporadas": [2016]
+  },
+  {
+    "nombre": "Diego Braghieri",
+    "alias": ["braghieri", "diego braghieri"],
+    "posiciones": ["DFC"],
+    "temporadas": [2016]
+  },
+  {
+    "nombre": "Maxi Velázquez",
+    "alias": ["velazquez", "maxi velazquez"],
+    "posiciones": ["LI"],
+    "temporadas": [2016]
+  },
+  {
+    "nombre": "Román Martínez",
+    "alias": ["martinez", "roman martinez", "roman"],
+    "posiciones": ["MC"],
+    "temporadas": [2016]
+  },
+  {
+    "nombre": "Iván Marcone",
+    "alias": ["marcone", "ivan marcone"],
+    "posiciones": ["MCD"],
+    "temporadas": [2016]
+  },
+  {
+    "nombre": "Miguel Almirón",
+    "alias": ["almiron", "miguel almiron", "miguelito"],
+    "posiciones": ["MC"],
+    "temporadas": [2016]
+  },
+  {
+    "nombre": "Oscar Benitez",
+    "alias": ["benitez", "oscar benitez"],
+    "posiciones": ["ED"],
+    "temporadas": [2016]
+  },
+  {
+    "nombre": "José Sand",
+    "alias": ["sand", "pepe", "pepe sand", "jose sand"],
+    "posiciones": ["DC"],
+    "temporadas": [2016]
+  },
+  {
+    "nombre": "Lautaro Acosta",
+    "alias": ["acosta", "laucha", "laucha acosta"],
+    "posiciones": ["EI"],
+    "temporadas": [2016]
+  }
+]

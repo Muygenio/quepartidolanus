@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState, type ReactNode } from 'react';
 import formaciones from './data/lanus.json';
 import PlayerSearch from './player-search';
@@ -93,6 +94,12 @@ export default function Home() {
   return (
     <main className="flex min-h-dvh flex-col items-center justify-start bg-slate-950 p-3 pb-[calc(6.5rem+env(safe-area-inset-bottom))] font-sans text-white sm:p-6 sm:pb-32">
       <div className="flex w-full max-w-md flex-col items-center">
+        <Link
+          href="/wordle"
+          className="mb-3 self-end rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs font-black uppercase tracking-wider text-rose-200 transition-colors hover:bg-rose-500/20"
+        >
+          Wordle diario →
+        </Link>
         <header className="relative mb-3 flex w-full flex-col items-center overflow-hidden rounded-2xl border border-slate-700/60 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-3.5 shadow-xl">
           <div className="absolute top-0 h-1 w-full bg-[#800020]" />
           <h1 className="text-center text-xl font-black uppercase tracking-wide text-white drop-shadow sm:text-2xl">
