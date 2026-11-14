@@ -94,12 +94,20 @@ export default function Home() {
   return (
     <main className="flex min-h-dvh flex-col items-center justify-start bg-slate-950 p-3 pb-[calc(6.5rem+env(safe-area-inset-bottom))] font-sans text-white sm:p-6 sm:pb-32">
       <div className="flex w-full max-w-md flex-col items-center">
-        <Link
-          href="/jugador-misterioso"
-          className="mb-3 self-end rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs font-black uppercase tracking-wider text-rose-200 transition-colors hover:bg-rose-500/20"
-        >
-          Jugador Misterioso →
-        </Link>
+        <div className="mb-3 flex w-full items-center justify-between gap-2">
+          <Link
+            href="/draft"
+            className="rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs font-black uppercase tracking-wider text-amber-200 transition-colors hover:bg-amber-400/20"
+          >
+            FUT Draft →
+          </Link>
+          <Link
+            href="/jugador-misterioso"
+            className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs font-black uppercase tracking-wider text-rose-200 transition-colors hover:bg-rose-500/20"
+          >
+            Jugador Misterioso →
+          </Link>
+        </div>
         <header className="relative mb-3 flex w-full flex-col items-center overflow-hidden rounded-2xl border border-slate-700/60 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-3.5 shadow-xl">
           <div className="absolute top-0 h-1 w-full bg-[#800020]" />
           <h1 className="text-center text-xl font-black uppercase tracking-wide text-white drop-shadow sm:text-2xl">

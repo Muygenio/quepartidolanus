@@ -8,13 +8,22 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from 'react';
-import jugadoresWordle from '../data/wordle-players.json';
+import jugadoresDeFormaciones from '../data/wordle-players.json';
+import jugadoresDraft from '../data/draft-players.json';
 
 const ZONA_HORARIA = 'America/Argentina/Buenos_Aires';
 const CLAVE_ALMACENAMIENTO = 'quepartido:wordle:v1';
 const MAX_INTENTOS = 6;
 
-type Jugador = (typeof jugadoresWordle)[number];
+type Jugador = {
+  nombre: string;
+  alias: string[];
+  posiciones: string[];
+  temporadas: number[];
+  rating: number;
+  matches: number | null;
+  goals: number | null;
+};
 type EstadoPartida = {
   fecha: string;
   intentos: string[];
@@ -32,7 +41,7 @@ type EstadoGuardado = {
   partida: EstadoPartida | null;
   estadisticas: Estadisticas;
 };
-type Coincidencia = 'exacta' | 'parcial' | 'ninguna';
+type Coincidencia = 'exacta' | 'parcial' | 'ninguna' | 'sin-dato';
 
 const normalizarTexto = (texto: string) =>
   texto
@@ -40,6 +49,49 @@ const normalizarTexto = (texto: string) =>
     .trim()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
+
+function agruparPosicion(posicion: string) {
+  if (['ARQ'].includes(posicion)) return 'ARQ';
+  if (['DEF', 'LD', 'DFC', 'LI'].includes(posicion)) return 'DEF';
+  if (['MED', 'MD', 'MC', 'MI', 'MCD', 'MCO'].includes(posicion)) {
+    return 'MED';
+  }
+  if (['DEL', 'DC', 'ED', 'EI'].includes(posicion)) return 'DEL';
+  return posicion;
+}
+
+function aliasesAdicionales(jugador: (typeof jugadoresDraft)[number]) {
+  return 'aliases' in jugador ? (jugador.aliases ?? []) : [];
+}
+
+const jugadoresWordle: Jugador[] = jugadoresDraft.map((jugadorDraft) => {
+  const aliases = aliasesAdicionales(jugadorDraft);
+  const datosAnteriores = jugadoresDeFormaciones.find(
+    (jugador) =>
+      normalizarTexto(jugador.nombre) === normalizarTexto(jugadorDraft.name) ||
+      jugador.alias.some(
+        (alias) => normalizarTexto(alias) === normalizarTexto(jugadorDraft.name),
+      ) ||
+      aliases.some(
+        (alias) => normalizarTexto(alias) === normalizarTexto(jugador.nombre),
+      ),
+  );
+
+  return {
+    nombre: datosAnteriores?.nombre ?? jugadorDraft.name,
+    alias: [...new Set([...(datosAnteriores?.alias ?? []), ...aliases])],
+    posiciones: datosAnteriores
+      ? [...new Set(datosAnteriores.posiciones.map(agruparPosicion))]
+      : [jugadorDraft.position],
+    temporadas: datosAnteriores?.temporadas ?? [],
+    rating: jugadorDraft.rating,
+    matches:
+      jugadorDraft.matches !== null && jugadorDraft.matches > 0
+        ? jugadorDraft.matches
+        : null,
+    goals: jugadorDraft.goals,
+  };
+});
 
 function obtenerFechaDiaria(fecha: Date) {
   const partes = new Intl.DateTimeFormat('en-US', {
@@ -219,6 +271,7 @@ function compararAtributos<T extends string | number>(
   valores: T[],
   objetivo: T[],
 ): Coincidencia {
+  if (!valores.length || !objetivo.length) return 'sin-dato';
   const coincideExacto =
     valores.length === objetivo.length &&
     valores.every((valor) => objetivo.includes(valor));
@@ -228,16 +281,28 @@ function compararAtributos<T extends string | number>(
     : 'ninguna';
 }
 
+function compararNumero(
+  valor: number | null,
+  objetivo: number | null,
+  tolerancia: number,
+): Coincidencia {
+  if (valor === null || objetivo === null) return 'sin-dato';
+  if (valor === objetivo) return 'exacta';
+  return Math.abs(valor - objetivo) <= tolerancia ? 'parcial' : 'ninguna';
+}
+
 const colorPorCoincidencia: Record<Coincidencia, string> = {
   exacta: 'border-emerald-500/50 bg-emerald-500/20 text-emerald-200',
   parcial: 'border-amber-500/50 bg-amber-500/20 text-amber-100',
   ninguna: 'border-rose-500/40 bg-rose-950/60 text-rose-200',
+  'sin-dato': 'border-slate-700 bg-slate-800/60 text-slate-400',
 };
 
 const emojiPorCoincidencia: Record<Coincidencia, string> = {
   exacta: '🟩',
   parcial: '🟨',
   ninguna: '🟥',
+  'sin-dato': '⬜',
 };
 
 export default function WordleGame() {
@@ -373,18 +438,20 @@ export default function WordleGame() {
         if (!jugador) {
           throw new Error(`No se encontró el jugador guardado: ${nombre}`);
         }
-        const posicion = compararAtributos(
-          jugador.posiciones,
-          jugadorDelDia.posiciones,
-        );
-        const temporada = compararAtributos(
-          jugador.temporadas,
-          jugadorDelDia.temporadas,
-        );
-        return (
-          emojiPorCoincidencia[posicion] +
-          emojiPorCoincidencia[temporada]
-        );
+        const pistas: Coincidencia[] = [
+          compararAtributos(
+            jugador.posiciones,
+            jugadorDelDia.posiciones,
+          ),
+          compararAtributos(
+            jugador.temporadas,
+            jugadorDelDia.temporadas,
+          ),
+          compararNumero(jugador.rating, jugadorDelDia.rating, 2),
+          compararNumero(jugador.matches, jugadorDelDia.matches, 40),
+          compararNumero(jugador.goals, jugadorDelDia.goals, 15),
+        ];
+        return pistas.map((pista) => emojiPorCoincidencia[pista]).join('');
       })
       .join('\n');
     const texto =
@@ -438,8 +505,8 @@ export default function WordleGame() {
             Jugador Misterioso
           </h1>
           <p className="mt-2 text-sm leading-relaxed text-slate-300">
-            Adiviná el jugador usando las pistas de posición y temporadas en
-            las formaciones de Lanús. Tenés {MAX_INTENTOS} intentos.
+            Adiviná el jugador con pistas de posición, temporadas, rating,
+            partidos y goles. Tenés {MAX_INTENTOS} intentos.
           </p>
           {fecha && (
             <p className="mt-4 inline-flex rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-1.5 font-mono text-sm text-slate-200">
@@ -494,6 +561,21 @@ export default function WordleGame() {
                     jugador.temporadas,
                     jugadorDelDia.temporadas,
                   );
+                  const coincidenciaRating = compararNumero(
+                    jugador.rating,
+                    jugadorDelDia.rating,
+                    2,
+                  );
+                  const coincidenciaPartidos = compararNumero(
+                    jugador.matches,
+                    jugadorDelDia.matches,
+                    40,
+                  );
+                  const coincidenciaGoles = compararNumero(
+                    jugador.goals,
+                    jugadorDelDia.goals,
+                    15,
+                  );
 
                   return (
                     <div
@@ -503,7 +585,7 @@ export default function WordleGame() {
                       <p className="mb-2 truncate text-sm font-bold text-white">
                         {indice + 1}. {jugador.nombre}
                       </p>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                         <Pista
                           etiqueta="Posición"
                           valor={jugador.posiciones.join(' · ')}
@@ -511,8 +593,35 @@ export default function WordleGame() {
                         />
                         <Pista
                           etiqueta="Temporadas"
-                          valor={jugador.temporadas.join(' · ')}
+                          valor={
+                            jugador.temporadas.length
+                              ? jugador.temporadas.join(' · ')
+                              : 'Sin dato'
+                          }
                           coincidencia={coincidenciaTemporada}
+                        />
+                        <Pista
+                          etiqueta="Rating"
+                          valor={jugador.rating.toString()}
+                          coincidencia={coincidenciaRating}
+                        />
+                        <Pista
+                          etiqueta="Partidos"
+                          valor={
+                            jugador.matches === null
+                              ? 'Sin dato'
+                              : jugador.matches.toLocaleString('es-AR')
+                          }
+                          coincidencia={coincidenciaPartidos}
+                        />
+                        <Pista
+                          etiqueta="Goles"
+                          valor={
+                            jugador.goals === null
+                              ? 'Sin dato'
+                              : jugador.goals.toLocaleString('es-AR')
+                          }
+                          coincidencia={coincidenciaGoles}
                         />
                       </div>
                     </div>
@@ -762,7 +871,9 @@ function Pista({
       ? 'Coincidencia exacta'
       : coincidencia === 'parcial'
         ? 'Coincidencia parcial'
-        : 'Sin coincidencia';
+        : coincidencia === 'sin-dato'
+          ? 'Dato no disponible'
+          : 'Sin coincidencia';
 
   return (
     <div
