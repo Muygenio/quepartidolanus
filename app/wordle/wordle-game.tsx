@@ -81,7 +81,7 @@ function maximoComunDivisor(a: number, b: number): number {
 function obtenerJugadorDelDia(fecha: string): Jugador {
   const cantidad = jugadoresWordle.length;
   if (cantidad === 0) {
-    throw new Error('La base de jugadores del Wordle está vacía.');
+    throw new Error('La base del Jugador Misterioso está vacía.');
   }
   if (cantidad === 1) return jugadoresWordle[0];
 
@@ -388,8 +388,8 @@ export default function WordleGame() {
       })
       .join('\n');
     const texto =
-      `QUEPARTIDO · Wordle diario ${fecha}\n${grilla}\n` +
-      'https://quepartido.live/wordle';
+      `QUEPARTIDO · Jugador Misterioso ${fecha}\n${grilla}\n` +
+      'https://quepartido.live/jugador-misterioso';
 
     if (!navigator.clipboard?.writeText) {
       setMensajeCompartir('Este navegador no permite copiar al portapapeles.');
@@ -435,7 +435,7 @@ export default function WordleGame() {
             QUEPARTIDO · Desafío diario
           </p>
           <h1 className="mt-2 text-2xl font-black uppercase tracking-wide sm:text-4xl">
-            Wordle de jugadores
+            Jugador Misterioso
           </h1>
           <p className="mt-2 text-sm leading-relaxed text-slate-300">
             Adiviná el jugador usando las pistas de posición y temporadas en
