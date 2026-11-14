@@ -6,6 +6,27 @@ import PlayerSearch from './player-search';
 
 type Partido = (typeof formaciones)[number];
 type Jugador = Partido['titulares'][number];
+type JugadorBuscable = {
+  nombre: string;
+  alias: string[];
+};
+
+const jugadoresDeLaBase = formaciones
+  .flatMap((partido) => partido.titulares)
+  .reduce<JugadorBuscable[]>((jugadores, jugador) => {
+    const existente = jugadores.find(
+      (candidato) => candidato.nombre === jugador.nombre,
+    );
+    const alias = jugador.alias ?? [];
+
+    if (existente) {
+      existente.alias = [...new Set([...existente.alias, ...alias])];
+    } else {
+      jugadores.push({ nombre: jugador.nombre, alias: [...alias] });
+    }
+
+    return jugadores;
+  }, []);
 
 export default function Home() {
   const [nivelActual, setNivelActual] = useState(0);
@@ -14,6 +35,7 @@ export default function Home() {
   const [acertados, setAcertados] = useState<string[]>([]);
   const [rendido, setRendido] = useState(false);
   const [tiempo, setTiempo] = useState(0);
+  const [mensajeError, setMensajeError] = useState('');
 
   const total = partidoActual.titulares.length;
   const ganaste = acertados.length === total;
@@ -29,10 +51,26 @@ export default function Home() {
   }, [ganaste, rendido]);
 
   const manejarSeleccion = (nombre: string) => {
+    const perteneceAlPartido = partidoActual.titulares.some(
+      (jugador) => jugador.nombre === nombre,
+    );
+
+    if (!perteneceAlPartido) {
+      setMensajeError('Ese jugador no pertenece a esta formación.');
+      setInputTexto('');
+      return;
+    }
+
+    setMensajeError('');
     setAcertados((actuales) =>
       actuales.includes(nombre) ? actuales : [...actuales, nombre],
     );
     setInputTexto('');
+  };
+
+  const manejarCambioBusqueda = (valor: string) => {
+    setInputTexto(valor);
+    setMensajeError('');
   };
 
   const formatearTiempo = (segundos: number) => {
@@ -46,6 +84,7 @@ export default function Home() {
       setNivelActual((nivel) => nivel + 1);
       setAcertados([]);
       setInputTexto('');
+      setMensajeError('');
       setRendido(false);
       setTiempo(0);
     }
@@ -144,11 +183,12 @@ export default function Home() {
         <div className="relative mx-auto w-full max-w-md">
           <PlayerSearch
             value={inputTexto}
-            onChange={setInputTexto}
+            onChange={manejarCambioBusqueda}
             onSelect={manejarSeleccion}
-            jugadores={partidoActual.titulares.filter(
+            jugadores={jugadoresDeLaBase.filter(
               (jugador) => !acertados.includes(jugador.nombre),
             )}
+            feedback={mensajeError}
             disabled={ganaste || rendido}
             placeholder={
               ganaste

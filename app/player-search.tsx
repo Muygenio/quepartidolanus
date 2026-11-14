@@ -4,7 +4,6 @@ import { useState, type ChangeEvent, type KeyboardEvent } from 'react';
 
 type JugadorBuscable = {
   nombre: string;
-  pos: string;
   alias?: string[];
 };
 
@@ -13,6 +12,7 @@ type PlayerSearchProps = {
   onChange: (value: string) => void;
   onSelect: (nombre: string) => void;
   jugadores: JugadorBuscable[];
+  feedback: string;
   disabled: boolean;
   placeholder: string;
 };
@@ -29,6 +29,7 @@ export default function PlayerSearch({
   onChange,
   onSelect,
   jugadores,
+  feedback,
   disabled,
   placeholder,
 }: PlayerSearchProps) {
@@ -88,7 +89,7 @@ export default function PlayerSearch({
           {sugerencias.length > 0 ? (
             sugerencias.map((jugador, indice) => (
               <button
-                key={`${jugador.pos}-${jugador.nombre}`}
+                key={jugador.nombre}
                 id={`sugerencia-jugador-${indice}`}
                 type="button"
                 role="option"
@@ -102,9 +103,6 @@ export default function PlayerSearch({
                 }`}
               >
                 <span>{jugador.nombre}</span>
-                <span className="ml-3 text-xs font-bold text-slate-400">
-                  {jugador.pos}
-                </span>
               </button>
             ))
           ) : (
@@ -113,6 +111,15 @@ export default function PlayerSearch({
             </p>
           )}
         </div>
+      )}
+
+      {feedback && (
+        <p
+          role="status"
+          className="mb-2 text-center text-xs font-semibold text-red-300"
+        >
+          {feedback}
+        </p>
       )}
 
       <label htmlFor="buscador-jugadores" className="sr-only">
