@@ -4,8 +4,7 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'QUEPARTIDO | Modos de juego',
-  description:
-    'Elegí un modo y poné a prueba tu memoria futbolera granate.',
+  description: 'Un proyecto granate de Maxi Da Silva.',
 };
 
 const modos = [
@@ -59,22 +58,14 @@ export default function Home() {
                 Quepartido
               </p>
               <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.24em] text-rose-200/80 sm:text-xs">
-                La pasión se juega
+                Un proyecto granate.
               </p>
             </div>
           </div>
           <div className="mt-10 max-w-2xl">
-            <p className="text-xs font-black uppercase tracking-[0.3em] text-rose-300">
-              Una historia, muchas formas de jugar
-            </p>
-            <h1 className="mt-3 text-3xl font-black uppercase leading-tight tracking-wide sm:text-5xl">
+            <h1 className="text-3xl font-black uppercase leading-tight tracking-wide sm:text-5xl">
               Elegí tu modo
-              <span className="block text-rose-300">y jugá por los colores</span>
             </h1>
-            <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-slate-300 sm:text-base">
-              Formaciones históricas, desafíos diarios y un draft para armar tu
-              propio once granate.
-            </p>
           </div>
         </header>
 
@@ -123,8 +114,15 @@ export default function Home() {
           ))}
         </section>
 
-        <footer className="mt-8 border-t border-white/10 pt-4 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
-          Club Atlético Lanús · Hecho para la memoria granate
+        <footer className="mt-8 flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-4 text-center sm:flex-row sm:text-left">
+          <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">
+            Hecho por Maxi Da Silva
+          </p>
+          <p className="text-xs leading-relaxed text-slate-300">
+            Si querés apoyar el proyecto, mi alias es{' '}
+            <span className="font-black text-rose-200">Maxlanus.mp</span>. ¡Se
+            agradece!
+          </p>
         </footer>
       </div>
     </main>
