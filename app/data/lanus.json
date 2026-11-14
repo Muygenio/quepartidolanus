@@ -45,7 +45,7 @@
     "titulares": [
       { "pos": "ARQ", "nombre": "Fernando Monetti", "alias": ["monetti", "mono"] },
       { "pos": "LD", "nombre": "José Luis Gómez", "alias": ["jose luis gomez", "laucha gomez"] },
-      { "pos": "DFC", "nombre": "Gustavo Gómez", "alias": ["gustavo gomez"] },
+      { "pos": "DFC", "nombre": "Gustavo Gómez", "alias": ["gustavo gomez", "gomez"] },
       { "pos": "DFC", "nombre": "Diego Braghieri", "alias": ["braghieri", "diego braghieri"] },
       { "pos": "LI", "nombre": "Maxi Velázquez", "alias": ["velazquez", "maxi velazquez"] },
       { "pos": "MC", "nombre": "Román Martínez", "alias": ["martinez", "roman martinez", "roman"] },
