@@ -2,11 +2,11 @@ import type { Metadata } from 'next';
 import WordleGame from './wordle-game';
 
 export const metadata: Metadata = {
-  title: 'Jugador Misterioso | QUEPARTIDO',
+  title: 'WORDLE Granate | QUEPARTIDO',
   description:
-    'Adiviná el jugador del día de Lanús con pistas de posición y temporadas.',
+    'Adiviná el apellido del jugador del día de Lanús en seis intentos.',
   alternates: {
-    canonical: '/jugador-misterioso',
+    canonical: '/wordle',
   },
 };
 

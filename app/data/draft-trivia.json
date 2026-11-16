@@ -1,0 +1,215 @@
+[
+  {
+    "id": "facil-primer-titulo-local",
+    "dificultad": "facil",
+    "pregunta": "¿En qué año ganó Lanús su primer título local de Primera División?",
+    "opciones": ["2005", "2007", "2009", "2013"],
+    "respuesta": "2007"
+  },
+  {
+    "id": "facil-maximo-goleador",
+    "dificultad": "facil",
+    "pregunta": "¿Quién es el máximo goleador histórico del Club Atlético Lanús?",
+    "opciones": [
+      "Lautaro Acosta",
+      "Luis Arrieta",
+      "José \"Pepe\" Sand",
+      "Gilmar Villagrán"
+    ],
+    "respuesta": "José \"Pepe\" Sand"
+  },
+  {
+    "id": "facil-apertura-2007-dt",
+    "dificultad": "facil",
+    "pregunta": "¿Qué entrenador dirigió al plantel campeón del Torneo Apertura 2007?",
+    "opciones": [
+      "Héctor Cúper",
+      "Luis Zubeldía",
+      "Jorge Almirón",
+      "Ramón Cabrero"
+    ],
+    "respuesta": "Ramón Cabrero"
+  },
+  {
+    "id": "facil-fundacion",
+    "dificultad": "facil",
+    "pregunta": "¿En qué fecha exacta se fundó el Club Atlético Lanús?",
+    "opciones": [
+      "3 de enero de 1915",
+      "15 de marzo de 1912",
+      "25 de mayo de 1918",
+      "12 de octubre de 1910"
+    ],
+    "respuesta": "3 de enero de 1915"
+  },
+  {
+    "id": "facil-estadio",
+    "dificultad": "facil",
+    "pregunta": "¿Cómo se llama oficialmente el estadio de Lanús, popularmente conocido como \"La Fortaleza\"?",
+    "opciones": [
+      "Estadio Ramón Cabrero",
+      "Estadio Ciudad de Lanús - Néstor Díaz Pérez",
+      "Estadio Héctor Guidi",
+      "Estadio José Sand"
+    ],
+    "respuesta": "Estadio Ciudad de Lanús - Néstor Díaz Pérez"
+  },
+  {
+    "id": "medio-sudamericana-2013-rival",
+    "dificultad": "medio",
+    "pregunta": "¿Contra qué equipo brasileño se consagró campeón Lanús de la Copa Sudamericana 2013?",
+    "opciones": [
+      "São Paulo",
+      "Chapecoense",
+      "Ponte Preta",
+      "Atlético Mineiro"
+    ],
+    "respuesta": "Ponte Preta"
+  },
+  {
+    "id": "medio-conmebol-1996",
+    "dificultad": "medio",
+    "pregunta": "¿Cuál fue el primer título internacional oficial en la historia del club, obtenido en 1996?",
+    "opciones": [
+      "Copa Mercosur",
+      "Copa Sudamericana",
+      "Recopa Sudamericana",
+      "Copa Conmebol"
+    ],
+    "respuesta": "Copa Conmebol"
+  },
+  {
+    "id": "medio-final-2016-rival",
+    "dificultad": "medio",
+    "pregunta": "¿A qué rival goleó Lanús 4-0 en el estadio Monumental para ganar el Campeonato de Primera División 2016?",
+    "opciones": [
+      "San Lorenzo",
+      "Racing Club",
+      "River Plate",
+      "Godoy Cruz"
+    ],
+    "respuesta": "San Lorenzo"
+  },
+  {
+    "id": "medio-jorge-almiron-titulos",
+    "dificultad": "medio",
+    "pregunta": "¿Quién fue el director técnico que conquistó tres títulos con Lanús durante 2016?",
+    "opciones": [
+      "Guillermo Barros Schelotto",
+      "Jorge Almirón",
+      "Ezequiel Carboni",
+      "Frank Darío Kudelka"
+    ],
+    "respuesta": "Jorge Almirón"
+  },
+  {
+    "id": "medio-suruga-bank-2014",
+    "dificultad": "medio",
+    "pregunta": "¿Contra qué equipo japonés disputó Lanús la Copa Suruga Bank en 2014?",
+    "opciones": [
+      "Kashima Antlers",
+      "Urawa Red Diamonds",
+      "Kashiwa Reysol",
+      "Gamba Osaka"
+    ],
+    "respuesta": "Kashiwa Reysol"
+  },
+  {
+    "id": "medio-banda-final-sudamericana",
+    "dificultad": "medio",
+    "pregunta": "¿Cuál es la banda que tocó en la final de la Sudamericana?",
+    "opciones": [
+      "Los Palmeras",
+      "Los del Fuego",
+      "Los Bilis",
+      "Los Auténticos Decadentes"
+    ],
+    "respuesta": "Los del Fuego"
+  },
+  {
+    "id": "dificil-globetrotters",
+    "dificultad": "dificil",
+    "pregunta": "¿Qué famoso apodo recibió el equipo de Lanús subcampeón de 1956 por su juego vistoso y toque de balón?",
+    "opciones": [
+      "La Máquina del Sur",
+      "Los Globetrotters",
+      "Los Carasucias",
+      "El Ballet Granate"
+    ],
+    "respuesta": "Los Globetrotters"
+  },
+  {
+    "id": "dificil-ultimo-ascenso",
+    "dificultad": "dificil",
+    "pregunta": "¿En qué año logró Lanús su último ascenso a Primera División antes de consolidarse definitivamente en la máxima categoría?",
+    "opciones": ["1989", "1990", "1992", "1994"],
+    "respuesta": "1992"
+  },
+  {
+    "id": "dificil-copa-bicentenario-gol",
+    "dificultad": "dificil",
+    "pregunta": "¿Qué jugador convirtió el gol agónico en el minuto 90+4 que le dio a Lanús la Copa del Bicentenario 2016 frente a Racing?",
+    "opciones": [
+      "José Sand",
+      "Brian Montenegro",
+      "Nicolás Aguirre",
+      "Lautaro Acosta"
+    ],
+    "respuesta": "Brian Montenegro"
+  },
+  {
+    "id": "dificil-final-2016-primer-gol",
+    "dificultad": "dificil",
+    "pregunta": "¿Qué jugador abrió el marcador en la goleada 4-0 frente a San Lorenzo por la final del Campeonato de Primera División 2016?",
+    "opciones": [
+      "Miguel Almirón",
+      "Junior Benítez",
+      "Román Martínez",
+      "Nicolás Aguirre"
+    ],
+    "respuesta": "Junior Benítez"
+  },
+  {
+    "id": "dificil-luis-arrieta-record",
+    "dificultad": "dificil",
+    "pregunta": "¿Qué delantero de Lanús ostenta el récord histórico del club de más goles convertidos en un solo campeonato de Primera División, con 31 tantos en 1939?",
+    "opciones": [
+      "Gilmar Villagrán",
+      "Bernardo Acosta",
+      "Luis Arrieta",
+      "Ángel Manuel Silva"
+    ],
+    "respuesta": "Luis Arrieta"
+  },
+  {
+    "id": "imposible-fusion",
+    "dificultad": "imposible",
+    "pregunta": "¿De la fusión de qué dos clubes barriales nació el Club Atlético Lanús en enero de 1915?",
+    "opciones": [
+      "Lanús United y El Progreso",
+      "Lanús Athletic y Sportivo Alsina",
+      "Club Talleres y Lanús Oeste",
+      "El Porvenir y Lanús Sur"
+    ],
+    "respuesta": "Lanús United y El Progreso"
+  },
+  {
+    "id": "imposible-copa-peron-1955",
+    "dificultad": "imposible",
+    "pregunta": "¿A qué rival derrotó Lanús 2-1 en la final de la Copa Juan Domingo Perón de 1955?",
+    "opciones": [
+      "Gimnasia y Esgrima La Plata",
+      "Estudiantes de La Plata",
+      "Chacarita Juniors",
+      "Banfield"
+    ],
+    "respuesta": "Estudiantes de La Plata"
+  },
+  {
+    "id": "imposible-conmebol-1996-global",
+    "dificultad": "imposible",
+    "pregunta": "¿Cuál fue el resultado global de la final de la Copa Conmebol 1996 en la que Lanús venció a Independiente Santa Fe?",
+    "opciones": ["2-2 (ganó por penales)", "2-1", "3-1", "3-2"],
+    "respuesta": "2-1"
+  }
+]

@@ -1,152 +1,151 @@
 'use client';
 
 import Link from 'next/link';
-import {
-  useEffect,
-  useState,
-  type ChangeEvent,
-  type FormEvent,
-  type KeyboardEvent,
-} from 'react';
-import jugadoresDeFormaciones from '../data/wordle-players.json';
+import { useCallback, useEffect, useState } from 'react';
+import jugadoresDeWordle from '../data/wordle-players.json';
 import jugadoresDraft from '../data/draft-players.json';
+import formaciones from '../data/lanus.json';
 
-const ZONA_HORARIA = 'America/Argentina/Buenos_Aires';
-const CLAVE_ALMACENAMIENTO = 'quepartido:wordle:v1';
-const MAX_INTENTOS = 6;
+type EstadoLetra = 'correcta' | 'presente' | 'ausente';
+type EstadoCasilla = EstadoLetra | 'vacia' | 'actual';
 
-type Jugador = {
-  nombre: string;
-  alias: string[];
-  posiciones: string[];
-  temporadas: number[];
-  rating: number;
-  matches: number | null;
-  goals: number | null;
-};
 type EstadoPartida = {
   fecha: string;
   intentos: string[];
   completada: boolean;
   victoria: boolean;
 };
+
 type Estadisticas = {
   partidas: number;
   victorias: number;
   rachaActual: number;
-  mejorRacha: number;
+  rachaMaxima: number;
   ultimaFechaCompletada: string | null;
 };
+
 type EstadoGuardado = {
   partida: EstadoPartida | null;
   estadisticas: Estadisticas;
 };
-type Coincidencia = 'exacta' | 'parcial' | 'ninguna' | 'sin-dato';
 
-const normalizarTexto = (texto: string) =>
-  texto
-    .toLowerCase()
-    .trim()
+type MensajeDeFecha = {
+  fecha: string;
+  texto: string;
+} | null;
+
+const CLAVE_ALMACENAMIENTO = 'quepartido:wordle:lanus:v1';
+const MAX_INTENTOS = 6;
+const LONGITUD_MINIMA = 4;
+const LONGITUD_MAXIMA = 8;
+const FILAS_TECLADO = ['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'] as const;
+const PARTICULAS_APELLIDO = new Set([
+  'da',
+  'de',
+  'del',
+  'do',
+  'dos',
+  'la',
+  'las',
+  'los',
+  'van',
+  'von',
+]);
+
+const nombresDeFuentes = [
+  ...jugadoresDeWordle.map((jugador) => jugador.nombre),
+  ...jugadoresDraft.map((jugador) => jugador.name),
+  ...formaciones.flatMap((formacion) =>
+    formacion.titulares.map((jugador) => jugador.nombre),
+  ),
+];
+
+const nombresAnteriores = new Set(nombresDeFuentes);
+
+function normalizarApellido(texto: string): string {
+  return texto
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase()
+    .replace(/[^A-Z]/g, '');
+}
 
-function agruparPosicion(posicion: string) {
-  if (['ARQ'].includes(posicion)) return 'ARQ';
-  if (['DEF', 'LD', 'DFC', 'LI'].includes(posicion)) return 'DEF';
-  if (['MED', 'MD', 'MC', 'MI', 'MCD', 'MCO'].includes(posicion)) {
-    return 'MED';
+function extraerApellido(nombre: string): string {
+  const partes = nombre.trim().split(/\s+/);
+  let indiceApellido = partes.length - 1;
+  while (
+    indiceApellido > 0 &&
+    PARTICULAS_APELLIDO.has(partes[indiceApellido - 1].toLowerCase())
+  ) {
+    indiceApellido -= 1;
   }
-  if (['DEL', 'DC', 'ED', 'EI'].includes(posicion)) return 'DEL';
-  return posicion;
+
+  return normalizarApellido(partes.slice(indiceApellido).join(' '));
 }
 
-function aliasesAdicionales(jugador: (typeof jugadoresDraft)[number]) {
-  return 'aliases' in jugador ? (jugador.aliases ?? []) : [];
-}
-
-const jugadoresWordle: Jugador[] = jugadoresDraft.map((jugadorDraft) => {
-  const aliases = aliasesAdicionales(jugadorDraft);
-  const datosAnteriores = jugadoresDeFormaciones.find(
-    (jugador) =>
-      normalizarTexto(jugador.nombre) === normalizarTexto(jugadorDraft.name) ||
-      jugador.alias.some(
-        (alias) => normalizarTexto(alias) === normalizarTexto(jugadorDraft.name),
-      ) ||
-      aliases.some(
-        (alias) => normalizarTexto(alias) === normalizarTexto(jugador.nombre),
+const apellidosDisponibles = Array.from(
+  new Set(
+    nombresDeFuentes
+      .map(extraerApellido)
+      .filter(
+        (apellido) =>
+          apellido.length >= LONGITUD_MINIMA &&
+          apellido.length <= LONGITUD_MAXIMA,
       ),
-  );
+  ),
+).sort();
 
-  return {
-    nombre: datosAnteriores?.nombre ?? jugadorDraft.name,
-    alias: [...new Set([...(datosAnteriores?.alias ?? []), ...aliases])],
-    posiciones: datosAnteriores
-      ? [...new Set(datosAnteriores.posiciones.map(agruparPosicion))]
-      : [jugadorDraft.position],
-    temporadas: datosAnteriores?.temporadas ?? [],
-    rating: jugadorDraft.rating,
-    matches:
-      jugadorDraft.matches !== null && jugadorDraft.matches > 0
-        ? jugadorDraft.matches
-        : null,
-    goals: jugadorDraft.goals,
-  };
-});
-
-function obtenerFechaDiaria(fecha: Date) {
-  const partes = new Intl.DateTimeFormat('en-US', {
-    timeZone: ZONA_HORARIA,
+function obtenerFechaDiaria(fecha: Date): string {
+  const partes = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Argentina/Buenos_Aires',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
   }).formatToParts(fecha);
-  const anio = partes.find((parte) => parte.type === 'year')?.value;
-  const mes = partes.find((parte) => parte.type === 'month')?.value;
-  const dia = partes.find((parte) => parte.type === 'day')?.value;
+  const valores = Object.fromEntries(
+    partes.map((parte) => [parte.type, parte.value]),
+  );
 
-  if (!anio || !mes || !dia) {
-    throw new Error('No se pudo determinar la fecha del desafío.');
+  return `${valores.year}-${valores.month}-${valores.day}`;
+}
+
+function obtenerApellidoDelDia(fecha: string): string {
+  if (apellidosDisponibles.length === 0) {
+    throw new Error('No hay apellidos válidos para el Wordle de Lanús.');
+  }
+  if (apellidosDisponibles.length === 1) return apellidosDisponibles[0];
+
+  const [anio, mes, dia] = fecha.split('-').map(Number);
+  const numeroDeDia = Math.floor(
+    Date.UTC(anio, mes - 1, dia) / (24 * 60 * 60 * 1000),
+  );
+  let semilla = 0;
+
+  for (const caracter of fecha) {
+    semilla = (semilla * 31 + caracter.charCodeAt(0)) >>> 0;
   }
 
-  return `${anio}-${mes}-${dia}`;
-}
-
-function obtenerNumeroDeDia(fecha: string) {
-  const anio = Number(fecha.slice(0, 4));
-  const mes = Number(fecha.slice(5, 7));
-  const dia = Number(fecha.slice(8, 10));
-  return Math.floor(Date.UTC(anio, mes - 1, dia) / 86_400_000);
-}
-
-function hashTexto(texto: string) {
-  let hash = 2_166_136_261;
-  for (let indice = 0; indice < texto.length; indice++) {
-    hash = Math.imul(hash ^ texto.charCodeAt(indice), 16_777_619);
-  }
-  return hash >>> 0;
-}
-
-function maximoComunDivisor(a: number, b: number): number {
-  return b === 0 ? a : maximoComunDivisor(b, a % b);
-}
-
-function obtenerJugadorDelDia(fecha: string): Jugador {
-  const cantidad = jugadoresWordle.length;
-  if (cantidad === 0) {
-    throw new Error('La base del Jugador Misterioso está vacía.');
-  }
-  if (cantidad === 1) return jugadoresWordle[0];
-
-  const semilla = hashTexto('quepartido-wordle-diario-v1');
-  let salto = (semilla % (cantidad - 1)) + 1;
-  while (maximoComunDivisor(salto, cantidad) !== 1) {
+  const cantidad = apellidosDisponibles.length;
+  let salto = ((semilla >>> 8) % cantidad) || 1;
+  while (salto > 1 && obtenerMaximoComunDivisor(salto, cantidad) !== 1) {
     salto = (salto % (cantidad - 1)) + 1;
   }
-  const desplazamiento = hashTexto('quepartido-wordle-offset-v1') % cantidad;
-  const indice =
-    (obtenerNumeroDeDia(fecha) * salto + desplazamiento) % cantidad;
 
-  return jugadoresWordle[indice];
+  const desplazamiento = semilla % cantidad;
+  const indice = (desplazamiento + numeroDeDia * salto) % cantidad;
+
+  return apellidosDisponibles[indice];
+}
+
+function obtenerMaximoComunDivisor(a: number, b: number): number {
+  let primero = a;
+  let segundo = b;
+
+  while (segundo !== 0) {
+    [primero, segundo] = [segundo, primero % segundo];
+  }
+
+  return primero;
 }
 
 function crearEstadisticasIniciales(): Estadisticas {
@@ -154,9 +153,15 @@ function crearEstadisticasIniciales(): Estadisticas {
     partidas: 0,
     victorias: 0,
     rachaActual: 0,
-    mejorRacha: 0,
+    rachaMaxima: 0,
     ultimaFechaCompletada: null,
   };
+}
+
+function obtenerFechaAnterior(fecha: string): string {
+  const dia = new Date(`${fecha}T00:00:00.000Z`);
+  dia.setUTCDate(dia.getUTCDate() - 1);
+  return dia.toISOString().slice(0, 10);
 }
 
 function actualizarEstadisticas(
@@ -166,13 +171,8 @@ function actualizarEstadisticas(
 ): Estadisticas {
   if (actuales.ultimaFechaCompletada === fecha) return actuales;
 
-  const ayer = actuales.ultimaFechaCompletada
-    ? obtenerNumeroDeDia(actuales.ultimaFechaCompletada)
-    : null;
-  const esDiaConsecutivo =
-    ayer !== null && obtenerNumeroDeDia(fecha) - ayer === 1;
   const rachaActual = victoria
-    ? esDiaConsecutivo
+    ? actuales.ultimaFechaCompletada === obtenerFechaAnterior(fecha)
       ? actuales.rachaActual + 1
       : 1
     : 0;
@@ -181,85 +181,118 @@ function actualizarEstadisticas(
     partidas: actuales.partidas + 1,
     victorias: actuales.victorias + (victoria ? 1 : 0),
     rachaActual,
-    mejorRacha: Math.max(actuales.mejorRacha, rachaActual),
+    rachaMaxima: Math.max(actuales.rachaMaxima, rachaActual),
     ultimaFechaCompletada: fecha,
   };
 }
 
 function esRegistro(valor: unknown): valor is Record<string, unknown> {
-  return typeof valor === 'object' && valor !== null;
-}
-
-function esPartidaGuardada(valor: unknown): valor is EstadoPartida {
-  return (
-    esRegistro(valor) &&
-    typeof valor.fecha === 'string' &&
-    /^\d{4}-\d{2}-\d{2}$/.test(valor.fecha) &&
-    Array.isArray(valor.intentos) &&
-    valor.intentos.length <= MAX_INTENTOS &&
-    valor.intentos.every(
-      (intento) =>
-        typeof intento === 'string' &&
-        jugadoresWordle.some((jugador) => jugador.nombre === intento),
-    ) &&
-    typeof valor.completada === 'boolean' &&
-    typeof valor.victoria === 'boolean'
-  );
+  return typeof valor === 'object' && valor !== null && !Array.isArray(valor);
 }
 
 function esEstadisticaGuardada(valor: unknown): valor is Estadisticas {
+  if (!esRegistro(valor)) return false;
+
   return (
-    esRegistro(valor) &&
     Number.isInteger(valor.partidas) &&
-    Number(valor.partidas) >= 0 &&
     Number.isInteger(valor.victorias) &&
-    Number(valor.victorias) >= 0 &&
     Number.isInteger(valor.rachaActual) &&
-    Number(valor.rachaActual) >= 0 &&
-    Number.isInteger(valor.mejorRacha) &&
-    Number(valor.mejorRacha) >= 0 &&
+    Number.isInteger(valor.rachaMaxima) &&
     (valor.ultimaFechaCompletada === null ||
       (typeof valor.ultimaFechaCompletada === 'string' &&
         /^\d{4}-\d{2}-\d{2}$/.test(valor.ultimaFechaCompletada)))
   );
 }
 
-function esEstadoGuardado(valor: unknown): valor is EstadoGuardado {
+function esPartidaGuardada(valor: unknown): valor is EstadoPartida {
+  if (!esRegistro(valor) || !Array.isArray(valor.intentos)) return false;
+
+  const intentos = valor.intentos;
+  const longitudInicial =
+    typeof intentos[0] === 'string' ? intentos[0].length : null;
+
   return (
-    esRegistro(valor) &&
-    (valor.partida === null || esPartidaGuardada(valor.partida)) &&
-    esEstadisticaGuardada(valor.estadisticas)
+    typeof valor.fecha === 'string' &&
+    /^\d{4}-\d{2}-\d{2}$/.test(valor.fecha) &&
+    intentos.length <= MAX_INTENTOS &&
+    intentos.every(
+      (intento) =>
+        typeof intento === 'string' &&
+        /^[A-Z]{4,8}$/.test(intento) &&
+        (longitudInicial === null || intento.length === longitudInicial),
+    ) &&
+    typeof valor.completada === 'boolean' &&
+    typeof valor.victoria === 'boolean' &&
+    (!valor.victoria || valor.completada) &&
+    (valor.completada ? valor.victoria || intentos.length === MAX_INTENTOS : true)
   );
+}
+
+function esPartidaAnteriorGuardada(valor: unknown): boolean {
+  if (!esRegistro(valor) || !Array.isArray(valor.intentos)) return false;
+
+  return (
+    typeof valor.fecha === 'string' &&
+    /^\d{4}-\d{2}-\d{2}$/.test(valor.fecha) &&
+    valor.intentos.length <= MAX_INTENTOS &&
+    valor.intentos.length > 0 &&
+    valor.intentos.every(
+      (intento) =>
+        typeof intento === 'string' && nombresAnteriores.has(intento),
+    ) &&
+    typeof valor.completada === 'boolean' &&
+    typeof valor.victoria === 'boolean'
+  );
+}
+
+function esEstadoGuardado(valor: unknown): valor is EstadoGuardado {
+  if (!esRegistro(valor) || !esEstadisticaGuardada(valor.estadisticas)) {
+    return false;
+  }
+
+  return valor.partida === null || esPartidaGuardada(valor.partida);
 }
 
 function leerEstadoGuardado(): {
   estado: EstadoGuardado | null;
   invalido: boolean;
+  migrado: boolean;
 } {
   const texto = window.localStorage.getItem(CLAVE_ALMACENAMIENTO);
-  if (!texto) return { estado: null, invalido: false };
+  if (!texto) return { estado: null, invalido: false, migrado: false };
 
   let valor: unknown;
   try {
     valor = JSON.parse(texto);
-  } catch (error) {
-    if (error instanceof SyntaxError) {
-      return { estado: null, invalido: true };
-    }
-    throw error;
+  } catch {
+    return { estado: null, invalido: true, migrado: false };
   }
 
-  return esEstadoGuardado(valor)
-    ? { estado: valor, invalido: false }
-    : { estado: null, invalido: true };
+  if (esEstadoGuardado(valor)) {
+    return { estado: valor, invalido: false, migrado: false };
+  }
+
+  if (
+    esRegistro(valor) &&
+    esPartidaAnteriorGuardada(valor.partida) &&
+    esEstadisticaGuardada(valor.estadisticas)
+  ) {
+    return {
+      estado: {
+        partida: null,
+        estadisticas: valor.estadisticas,
+      },
+      invalido: false,
+      migrado: true,
+    };
+  }
+
+  return { estado: null, invalido: true, migrado: false };
 }
 
-function guardarEstado(estado: EstadoGuardado) {
+function guardarEstado(estado: EstadoGuardado): boolean {
   try {
-    window.localStorage.setItem(
-      CLAVE_ALMACENAMIENTO,
-      JSON.stringify(estado),
-    );
+    window.localStorage.setItem(CLAVE_ALMACENAMIENTO, JSON.stringify(estado));
     return true;
   } catch (error) {
     if (error instanceof DOMException) return false;
@@ -267,60 +300,117 @@ function guardarEstado(estado: EstadoGuardado) {
   }
 }
 
-function compararAtributos<T extends string | number>(
-  valores: T[],
-  objetivo: T[],
-): Coincidencia {
-  if (!valores.length || !objetivo.length) return 'sin-dato';
-  const coincideExacto =
-    valores.length === objetivo.length &&
-    valores.every((valor) => objetivo.includes(valor));
-  if (coincideExacto) return 'exacta';
-  return valores.some((valor) => objetivo.includes(valor))
-    ? 'parcial'
-    : 'ninguna';
+function evaluarIntento(intento: string, objetivo: string): EstadoLetra[] {
+  const resultado: EstadoLetra[] = Array.from(
+    { length: objetivo.length },
+    () => 'ausente',
+  );
+  const letrasRestantes = objetivo.split('');
+
+  for (let indice = 0; indice < objetivo.length; indice += 1) {
+    if (intento[indice] === objetivo[indice]) {
+      resultado[indice] = 'correcta';
+      letrasRestantes[indice] = '';
+    }
+  }
+
+  for (let indice = 0; indice < objetivo.length; indice += 1) {
+    if (resultado[indice] === 'correcta') continue;
+
+    const indiceDisponible = letrasRestantes.indexOf(intento[indice]);
+    if (indiceDisponible !== -1) {
+      resultado[indice] = 'presente';
+      letrasRestantes[indiceDisponible] = '';
+    }
+  }
+
+  return resultado;
 }
 
-function compararNumero(
-  valor: number | null,
-  objetivo: number | null,
-  tolerancia: number,
-): Coincidencia {
-  if (valor === null || objetivo === null) return 'sin-dato';
-  if (valor === objetivo) return 'exacta';
-  return Math.abs(valor - objetivo) <= tolerancia ? 'parcial' : 'ninguna';
+const clasesCasilla: Record<EstadoCasilla, string> = {
+  vacia: 'border-slate-600 bg-black/20 text-white',
+  actual: 'border-slate-300 bg-black/20 text-white',
+  correcta: 'border-emerald-500 bg-emerald-700 text-white',
+  presente: 'border-amber-400 bg-amber-400 text-slate-950',
+  ausente: 'border-slate-700 bg-slate-800 text-slate-300',
+};
+
+const clasesTecla: Record<EstadoLetra | 'nueva', string> = {
+  nueva: 'bg-slate-600 text-white hover:bg-slate-500',
+  correcta: 'bg-emerald-700 text-white',
+  presente: 'bg-amber-400 text-slate-950',
+  ausente: 'bg-slate-800 text-slate-400',
+};
+
+const prioridadEstado: Record<EstadoLetra, number> = {
+  ausente: 1,
+  presente: 2,
+  correcta: 3,
+};
+
+function obtenerEstadosTeclado(
+  intentos: string[],
+  objetivo: string,
+): Partial<Record<string, EstadoLetra>> {
+  const estados: Partial<Record<string, EstadoLetra>> = {};
+
+  for (const intento of intentos) {
+    const resultado = evaluarIntento(intento, objetivo);
+    for (let indice = 0; indice < intento.length; indice += 1) {
+      const letra = intento[indice];
+      const estadoActual = estados[letra];
+      const nuevoEstado = resultado[indice];
+
+      if (
+        !estadoActual ||
+        prioridadEstado[nuevoEstado] > prioridadEstado[estadoActual]
+      ) {
+        estados[letra] = nuevoEstado;
+      }
+    }
+  }
+
+  return estados;
 }
 
-const colorPorCoincidencia: Record<Coincidencia, string> = {
-  exacta: 'border-emerald-500/50 bg-emerald-500/20 text-emerald-200',
-  parcial: 'border-amber-500/50 bg-amber-500/20 text-amber-100',
-  ninguna: 'border-rose-500/40 bg-rose-950/60 text-rose-200',
-  'sin-dato': 'border-slate-700 bg-slate-800/60 text-slate-400',
-};
-
-const emojiPorCoincidencia: Record<Coincidencia, string> = {
-  exacta: '🟩',
-  parcial: '🟨',
-  ninguna: '🟥',
-  'sin-dato': '⬜',
-};
+function normalizarLetra(texto: string): string {
+  return texto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toUpperCase();
+}
 
 export default function WordleGame() {
   const [fecha, setFecha] = useState<string | null>(null);
   const [partida, setPartida] = useState<EstadoPartida | null>(null);
-  const [estadisticas, setEstadisticas] = useState(
+  const [estadisticas, setEstadisticas] = useState<Estadisticas>(
     crearEstadisticasIniciales,
   );
-  const [busqueda, setBusqueda] = useState('');
-  const [jugadorSeleccionado, setJugadorSeleccionado] = useState<string | null>(
-    null,
+  const [entrada, setEntrada] = useState('');
+  const [mensajeJuego, setMensajeJuego] = useState<MensajeDeFecha>(null);
+  const [mensajeAlmacenamiento, setMensajeAlmacenamiento] =
+    useState<MensajeDeFecha>(null);
+  const mostrarMensajeJuego = useCallback(
+    (texto: string) => {
+      setMensajeJuego(fecha && texto ? { fecha, texto } : null);
+    },
+    [fecha],
   );
-  const [mensajeAlmacenamiento, setMensajeAlmacenamiento] = useState('');
-  const [mensajeCompartir, setMensajeCompartir] = useState('');
-  const [mensajeJuego, setMensajeJuego] = useState('');
+  const mostrarMensajeAlmacenamiento = useCallback(
+    (texto: string) => {
+      setMensajeAlmacenamiento(fecha && texto ? { fecha, texto } : null);
+    },
+    [fecha],
+  );
 
   useEffect(() => {
-    const actualizarFecha = () => setFecha(obtenerFechaDiaria(new Date()));
+    const actualizarFecha = () => {
+      const nuevaFecha = obtenerFechaDiaria(new Date());
+      setFecha((fechaActual) =>
+        fechaActual === nuevaFecha ? fechaActual : nuevaFecha,
+      );
+    };
+
     actualizarFecha();
     const intervalo = window.setInterval(actualizarFecha, 30_000);
     return () => window.clearInterval(intervalo);
@@ -330,399 +420,434 @@ export default function WordleGame() {
     if (!fecha) return;
 
     const temporizador = window.setTimeout(() => {
-      setMensajeAlmacenamiento('');
-      setMensajeJuego('');
-      setBusqueda('');
-      setJugadorSeleccionado(null);
+      const objetivo = obtenerApellidoDelDia(fecha);
+      const partidaVacia: EstadoPartida = {
+        fecha,
+        intentos: [],
+        completada: false,
+        victoria: false,
+      };
 
       try {
-        const resultado = leerEstadoGuardado();
-        if (resultado.invalido) {
+        const resultadoGuardado = leerEstadoGuardado();
+        const nuevasEstadisticas =
+          resultadoGuardado.estado?.estadisticas ??
+          crearEstadisticasIniciales();
+        const partidaGuardada = resultadoGuardado.estado?.partida;
+        const mismaLongitud =
+          partidaGuardada?.intentos.every(
+            (intento) => intento.length === objetivo.length,
+          ) ?? true;
+        const partidaDeHoy =
+          partidaGuardada?.fecha === fecha && mismaLongitud
+            ? partidaGuardada
+            : partidaVacia;
+
+        setEstadisticas(nuevasEstadisticas);
+        setPartida(partidaDeHoy);
+        setEntrada('');
+
+        if (resultadoGuardado.invalido) {
           window.localStorage.removeItem(CLAVE_ALMACENAMIENTO);
-          setMensajeAlmacenamiento(
-            'El guardado local estaba dañado y se reinició.',
+          mostrarMensajeAlmacenamiento(
+            'No se pudo leer el guardado anterior; hoy empezás una partida nueva.',
           );
         }
 
-        const guardado = resultado.estado;
-        setEstadisticas(
-          guardado?.estadisticas ?? crearEstadisticasIniciales(),
-        );
-        setPartida(
-          guardado?.partida?.fecha === fecha
-            ? guardado.partida
-            : {
-                fecha,
-                intentos: [],
-                completada: false,
-                victoria: false,
-              },
-        );
-      } catch (error) {
-        if (error instanceof DOMException) {
-          setMensajeAlmacenamiento(
-            'El navegador bloqueó el almacenamiento local; el progreso no se conservará.',
+        if (resultadoGuardado.migrado) {
+          mostrarMensajeAlmacenamiento(
+            'Actualizamos el Wordle clásico y conservamos tus estadísticas.',
           );
-          setEstadisticas(crearEstadisticasIniciales());
-          setPartida({
-            fecha,
-            intentos: [],
-            completada: false,
-            victoria: false,
-          });
-        } else {
-          throw error;
         }
+
+        if (
+          resultadoGuardado.migrado ||
+          (partidaGuardada?.fecha === fecha && !mismaLongitud)
+        ) {
+          const guardado = guardarEstado({
+            partida: partidaVacia,
+            estadisticas: nuevasEstadisticas,
+          });
+          if (!guardado) {
+            mostrarMensajeAlmacenamiento(
+              'No se pudo guardar en este dispositivo. La partida sigue disponible mientras esta página permanezca abierta.',
+            );
+          }
+        }
+      } catch (error) {
+        if (!(error instanceof DOMException)) throw error;
+
+        setPartida(partidaVacia);
+        setEntrada('');
+        setEstadisticas(crearEstadisticasIniciales());
+        mostrarMensajeAlmacenamiento(
+          'El almacenamiento no está disponible. La partida no se guardará al cerrar esta página.',
+        );
       }
     }, 0);
 
     return () => window.clearTimeout(temporizador);
-  }, [fecha]);
+  }, [fecha, mostrarMensajeAlmacenamiento]);
 
-  const jugadorDelDia = fecha ? obtenerJugadorDelDia(fecha) : null;
-  const listo = Boolean(fecha && partida?.fecha === fecha && jugadorDelDia);
+  const objetivo = fecha ? obtenerApellidoDelDia(fecha) : '';
+  const cantidadLetras = objetivo.length;
+  const listo = Boolean(fecha && partida?.fecha === fecha);
+  const textoMensajeJuego =
+    mensajeJuego?.fecha === fecha ? mensajeJuego.texto : '';
+  const textoMensajeAlmacenamiento =
+    mensajeAlmacenamiento?.fecha === fecha ? mensajeAlmacenamiento.texto : '';
+  const estadosTeclado =
+    partida && objetivo
+      ? obtenerEstadosTeclado(partida.intentos, objetivo)
+      : {};
 
-  const enviarIntento = (evento: FormEvent<HTMLFormElement>) => {
-    evento.preventDefault();
-    if (!fecha || !partida || !jugadorDelDia || partida.completada) return;
-    if (!jugadorSeleccionado) {
-      setMensajeJuego('Elegí un jugador de la lista antes de probar.');
+  const enviarIntento = useCallback(() => {
+    if (!fecha || !partida || !objetivo || partida.completada) return;
+
+    if (entrada.length !== objetivo.length) {
+      mostrarMensajeJuego(
+        `Completá las ${objetivo.length} letras antes de probar.`,
+      );
       return;
     }
-    if (partida.intentos.includes(jugadorSeleccionado)) {
-      setMensajeJuego('Ya probaste con ese jugador.');
-      return;
-    }
 
-    const intentos = [...partida.intentos, jugadorSeleccionado];
-    const victoria = jugadorSeleccionado === jugadorDelDia.nombre;
-    const completada = victoria || intentos.length >= MAX_INTENTOS;
-    const siguientePartida: EstadoPartida = {
+    const nuevosIntentos = [...partida.intentos, entrada];
+    const victoria = entrada === objetivo;
+    const completada = victoria || nuevosIntentos.length === MAX_INTENTOS;
+    const nuevaPartida: EstadoPartida = {
       fecha,
-      intentos,
+      intentos: nuevosIntentos,
       completada,
       victoria,
     };
-    const siguientesEstadisticas = completada
+    const nuevasEstadisticas = completada
       ? actualizarEstadisticas(estadisticas, fecha, victoria)
       : estadisticas;
 
-    setPartida(siguientePartida);
-    setEstadisticas(siguientesEstadisticas);
-    setBusqueda('');
-    setJugadorSeleccionado(null);
-    setMensajeJuego('');
-    setMensajeCompartir('');
+    setPartida(nuevaPartida);
+    setEstadisticas(nuevasEstadisticas);
+    setEntrada('');
+    mostrarMensajeJuego('');
 
-    const guardado = guardarEstado({
-      partida: siguientePartida,
-      estadisticas: siguientesEstadisticas,
-    });
-    if (!guardado) {
-      setMensajeAlmacenamiento(
-        'No se pudo guardar el progreso. El desafío seguirá disponible mientras esta pestaña permanezca abierta.',
+    if (!guardarEstado({ partida: nuevaPartida, estadisticas: nuevasEstadisticas })) {
+      mostrarMensajeAlmacenamiento(
+        'No se pudo guardar en este dispositivo. La partida sigue disponible mientras esta página permanezca abierta.',
       );
     }
-  };
+  }, [
+    entrada,
+    estadisticas,
+    fecha,
+    objetivo,
+    partida,
+    mostrarMensajeAlmacenamiento,
+    mostrarMensajeJuego,
+  ]);
 
-  const compartirResultado = async () => {
-    if (!fecha || !partida || !partida.intentos.length || !jugadorDelDia) {
-      return;
-    }
+  const manejarTecla = useCallback(
+    (tecla: string) => {
+      if (!listo || !partida || partida.completada) return;
+
+      if (tecla === 'ENTER') {
+        enviarIntento();
+        return;
+      }
+
+      if (tecla === 'BORRAR') {
+        setEntrada((actual) => actual.slice(0, -1));
+        mostrarMensajeJuego('');
+        return;
+      }
+
+      const letra = normalizarLetra(tecla);
+      if (!/^[A-Z]$/.test(letra)) return;
+
+      setEntrada((actual) =>
+        actual.length < cantidadLetras ? actual + letra : actual,
+      );
+      mostrarMensajeJuego('');
+    },
+    [cantidadLetras, enviarIntento, listo, mostrarMensajeJuego, partida],
+  );
+
+  useEffect(() => {
+    const manejarTecladoFisico = (evento: KeyboardEvent) => {
+      if (evento.ctrlKey || evento.metaKey || evento.altKey) return;
+
+      if (evento.key === 'Enter') {
+        evento.preventDefault();
+        manejarTecla('ENTER');
+        return;
+      }
+
+      if (evento.key === 'Backspace' || evento.key === 'Delete') {
+        evento.preventDefault();
+        manejarTecla('BORRAR');
+        return;
+      }
+
+      if (evento.key.length === 1) {
+        const letra = normalizarLetra(evento.key);
+        if (/^[A-Z]$/.test(letra)) manejarTecla(letra);
+      }
+    };
+
+    window.addEventListener('keydown', manejarTecladoFisico);
+    return () => window.removeEventListener('keydown', manejarTecladoFisico);
+  }, [manejarTecla]);
+
+  const compartirResultado = useCallback(async () => {
+    if (!fecha || !partida || !objetivo || partida.intentos.length === 0) return;
 
     const grilla = partida.intentos
-      .map((nombre) => {
-        const jugador = jugadoresWordle.find(
-          (candidato) => candidato.nombre === nombre,
-        );
-        if (!jugador) {
-          throw new Error(`No se encontró el jugador guardado: ${nombre}`);
-        }
-        const pistas: Coincidencia[] = [
-          compararAtributos(
-            jugador.posiciones,
-            jugadorDelDia.posiciones,
-          ),
-          compararAtributos(
-            jugador.temporadas,
-            jugadorDelDia.temporadas,
-          ),
-          compararNumero(jugador.rating, jugadorDelDia.rating, 2),
-          compararNumero(jugador.matches, jugadorDelDia.matches, 40),
-          compararNumero(jugador.goals, jugadorDelDia.goals, 15),
-        ];
-        return pistas.map((pista) => emojiPorCoincidencia[pista]).join('');
-      })
+      .map((intento) =>
+        evaluarIntento(intento, objetivo)
+          .map((estado) =>
+            estado === 'correcta'
+              ? '🟩'
+              : estado === 'presente'
+                ? '🟨'
+                : '⬛',
+          )
+          .join(''),
+      )
       .join('\n');
-    const texto =
-      `QUEPARTIDO · Jugador Misterioso ${fecha}\n${grilla}\n` +
-      'https://quepartido.live/jugador-misterioso';
-
-    if (!navigator.clipboard?.writeText) {
-      setMensajeCompartir('Este navegador no permite copiar al portapapeles.');
-      return;
-    }
+    const resultado = partida.victoria
+      ? `${partida.intentos.length}/${MAX_INTENTOS}`
+      : partida.completada
+        ? `X/${MAX_INTENTOS}`
+        : `${partida.intentos.length}/${MAX_INTENTOS}`;
+    const texto = `QUEPARTIDO WORDLE ${fecha}\n${resultado}\n\n${grilla}`;
 
     try {
+      if (!navigator.clipboard?.writeText) {
+        mostrarMensajeJuego('No se pudo copiar el resultado desde este navegador.');
+        return;
+      }
       await navigator.clipboard.writeText(texto);
-      setMensajeCompartir('Resultado copiado. ¡Compartilo sin spoilers!');
+      mostrarMensajeJuego('Resultado copiado para compartir.');
     } catch (error) {
       if (error instanceof DOMException) {
-        setMensajeCompartir('No se pudo copiar. Revisá el permiso del navegador.');
-      } else {
-        throw error;
+        mostrarMensajeJuego('No se pudo copiar el resultado desde este navegador.');
+        return;
       }
+      throw error;
     }
-  };
+  }, [fecha, objetivo, partida, mostrarMensajeJuego]);
 
-  const cambiarBusqueda = (valor: string) => {
-    setBusqueda(valor);
-    setJugadorSeleccionado(null);
-    setMensajeJuego('');
-  };
-
-  const seleccionarJugador = (nombre: string) => {
-    setBusqueda(nombre);
-    setJugadorSeleccionado(nombre);
-    setMensajeJuego('');
-  };
+  const cantidadIntentos = partida?.intentos.length ?? 0;
 
   return (
-    <main className="lanus-watermark relative min-h-dvh bg-[#080609] px-3 py-5 font-sans text-white sm:px-6 sm:py-8">
-      <div className="relative z-10 mx-auto w-full max-w-2xl">
-        <Link
-          href="/"
-          className="mb-4 inline-flex items-center gap-2 rounded-lg border border-[#57132b]/70 bg-[#210a13]/70 px-3 py-2 text-sm font-bold text-slate-200 transition-colors hover:bg-[#3a0c1d]"
-        >
-          <span aria-hidden="true">←</span> Elegir modo
-        </Link>
-
-        <header className="mb-5 overflow-hidden rounded-2xl border border-[#65132f]/80 bg-gradient-to-br from-[#17070e] via-[#310a1a] to-[#10070b] p-5 shadow-xl sm:p-7">
-          <p className="text-xs font-black uppercase tracking-[0.2em] text-rose-300">
-            QUEPARTIDO · Desafío diario
+    <main className="lanus-watermark relative flex h-dvh min-h-dvh flex-col overflow-y-auto bg-[#120c0f] px-2 pt-2 pb-[env(safe-area-inset-bottom)] text-white sm:px-5 sm:py-5">
+      <div className="relative z-10 mx-auto flex w-full max-w-md flex-1 flex-col gap-2">
+        <header className="shrink-0">
+          <div className="flex items-center justify-between gap-2">
+            <Link
+              href="/"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/5 text-xl text-white/80 transition hover:bg-white/10"
+              aria-label="Volver al inicio"
+            >
+              ‹
+            </Link>
+            <div className="text-right">
+              <p className="text-[9px] font-black uppercase tracking-[0.3em] text-rose-300">
+                Quepartido
+              </p>
+              <h1 className="text-xl font-black leading-tight sm:text-2xl">
+                Wordle Granate
+              </h1>
+            </div>
+          </div>
+          <p className="mt-1 text-center text-xs text-white/65">
+            Adiviná el apellido del día en seis intentos. No hace falta que sea
+            una palabra del diccionario.
           </p>
-          <h1 className="mt-2 text-2xl font-black uppercase tracking-wide sm:text-4xl">
-            Jugador Misterioso
-          </h1>
-          <p className="mt-2 text-sm leading-relaxed text-slate-300">
-            Adiviná el jugador con pistas de posición, temporadas, rating,
-            partidos y goles. Tenés {MAX_INTENTOS} intentos.
-          </p>
-          {fecha && (
-            <p className="mt-4 inline-flex rounded-lg border border-[#58132b]/70 bg-black/40 px-3 py-1.5 font-mono text-sm text-slate-200">
-              {fecha}
-            </p>
-          )}
         </header>
 
-        {mensajeAlmacenamiento && (
+        {textoMensajeAlmacenamiento && (
           <p
             role="status"
-            className="mb-4 rounded-xl border border-[#7d1b3c]/50 bg-[#340b1c]/60 px-4 py-3 text-sm text-rose-100"
+            className="shrink-0 rounded-lg border border-amber-300/20 bg-amber-300/10 px-2 py-1 text-center text-[10px] leading-tight text-amber-100"
           >
-            {mensajeAlmacenamiento}
+            {textoMensajeAlmacenamiento}
           </p>
         )}
 
-        {!listo || !partida || !jugadorDelDia ? (
-          <div
-            className="rounded-2xl border border-[#411123] bg-[#13090e]/95 p-6 text-center text-slate-300"
-            role="status"
-          >
-            Cargando el desafío...
+        <section
+          aria-label="Estadísticas"
+          className="grid shrink-0 grid-cols-4 gap-1"
+        >
+          <Estadistica titulo="Partidas" valor={estadisticas.partidas} />
+          <Estadistica titulo="Victorias" valor={estadisticas.victorias} />
+          <Estadistica titulo="Racha" valor={estadisticas.rachaActual} />
+          <Estadistica titulo="Mejor" valor={estadisticas.rachaMaxima} />
+        </section>
+
+        {!listo || !partida ? (
+          <div className="flex flex-1 items-center justify-center text-sm text-white/60">
+            Preparando el desafío…
           </div>
         ) : (
           <>
-            <section
-              aria-label="Intentos del desafío"
-              className="mb-5 rounded-2xl border border-[#411123] bg-[#13090e]/90 p-4 sm:p-5"
-            >
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <h2 className="text-sm font-black uppercase tracking-wider text-slate-200">
-                  Tus intentos
-                </h2>
-                <span className="rounded-lg border border-[#4c1428] bg-black/50 px-2.5 py-1 font-mono text-sm font-bold text-slate-200">
-                  {partida.intentos.length} / {MAX_INTENTOS}
-                </span>
-              </div>
-
-              <div className="space-y-3">
-                {partida.intentos.map((nombre, indice) => {
-                  const jugador = jugadoresWordle.find(
-                    (candidato) => candidato.nombre === nombre,
-                  );
-                  if (!jugador) return null;
-
-                  const coincidenciaPosicion = compararAtributos(
-                    jugador.posiciones,
-                    jugadorDelDia.posiciones,
-                  );
-                  const coincidenciaTemporada = compararAtributos(
-                    jugador.temporadas,
-                    jugadorDelDia.temporadas,
-                  );
-                  const coincidenciaRating = compararNumero(
-                    jugador.rating,
-                    jugadorDelDia.rating,
-                    2,
-                  );
-                  const coincidenciaPartidos = compararNumero(
-                    jugador.matches,
-                    jugadorDelDia.matches,
-                    40,
-                  );
-                  const coincidenciaGoles = compararNumero(
-                    jugador.goals,
-                    jugadorDelDia.goals,
-                    15,
-                  );
+            <section className="flex min-h-[270px] flex-1 flex-col items-center justify-center gap-2">
+              <div
+                role="grid"
+                aria-label={`Tablero de seis intentos y ${cantidadLetras} letras`}
+                className="grid gap-1.5"
+                style={{
+                  gridTemplateColumns: `repeat(${cantidadLetras}, minmax(0, 1fr))`,
+                  width: `min(100%, ${cantidadLetras * 44}px)`,
+                }}
+              >
+                {Array.from({ length: MAX_INTENTOS }, (_, indiceFila) => {
+                  const intentoGuardado = partida.intentos[indiceFila];
+                  const esFilaActual =
+                    !partida.completada &&
+                    indiceFila === partida.intentos.length;
+                  const letras = (
+                    intentoGuardado ??
+                    (esFilaActual ? entrada : '')
+                  ).split('');
+                  const estadosFila = intentoGuardado
+                    ? evaluarIntento(intentoGuardado, objetivo)
+                    : [];
 
                   return (
                     <div
-                      key={`${nombre}-${indice}`}
-                      className="rounded-xl border border-[#38101f] bg-black/45 p-3"
+                      key={indiceFila}
+                      role="row"
+                      className="contents"
+                      aria-label={`Intento ${indiceFila + 1}`}
                     >
-                      <p className="mb-2 truncate text-sm font-bold text-white">
-                        {indice + 1}. {jugador.nombre}
-                      </p>
-                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                        <Pista
-                          etiqueta="Posición"
-                          valor={jugador.posiciones.join(' · ')}
-                          coincidencia={coincidenciaPosicion}
-                        />
-                        <Pista
-                          etiqueta="Temporadas"
-                          valor={
-                            jugador.temporadas.length
-                              ? jugador.temporadas.join(' · ')
-                              : 'Sin dato'
-                          }
-                          coincidencia={coincidenciaTemporada}
-                        />
-                        <Pista
-                          etiqueta="Rating"
-                          valor={jugador.rating.toString()}
-                          coincidencia={coincidenciaRating}
-                        />
-                        <Pista
-                          etiqueta="Partidos"
-                          valor={
-                            jugador.matches === null
-                              ? 'Sin dato'
-                              : jugador.matches.toLocaleString('es-AR')
-                          }
-                          coincidencia={coincidenciaPartidos}
-                        />
-                        <Pista
-                          etiqueta="Goles"
-                          valor={
-                            jugador.goals === null
-                              ? 'Sin dato'
-                              : jugador.goals.toLocaleString('es-AR')
-                          }
-                          coincidencia={coincidenciaGoles}
-                        />
-                      </div>
+                      {Array.from({ length: cantidadLetras }, (_, indiceColumna) => {
+                        const letra = letras[indiceColumna] ?? '';
+                        const estado: EstadoCasilla = intentoGuardado
+                          ? estadosFila[indiceColumna]
+                          : letra
+                            ? 'actual'
+                            : 'vacia';
+                        const descripcion =
+                          estado === 'correcta'
+                            ? 'letra correcta en la posición'
+                            : estado === 'presente'
+                              ? 'letra correcta en otra posición'
+                              : estado === 'ausente'
+                                ? 'letra que no está en el apellido'
+                                : 'sin evaluar';
+
+                        return (
+                          <div
+                            key={indiceColumna}
+                            role="gridcell"
+                            aria-label={
+                              letra
+                                ? `${letra}, ${descripcion}`
+                                : 'Casilla vacía'
+                            }
+                            className={`flex aspect-square items-center justify-center rounded-md border-2 text-lg font-black sm:text-xl ${clasesCasilla[estado]}`}
+                          >
+                            {letra}
+                          </div>
+                        );
+                      })}
                     </div>
                   );
                 })}
-                {partida.intentos.length === 0 && (
-                  <p className="rounded-xl border border-dashed border-[#4c1428] px-4 py-6 text-center text-sm text-slate-400">
-                    Tus intentos y pistas van a aparecer acá.
-                  </p>
-                )}
               </div>
+
+              <p
+                role="status"
+                aria-live="polite"
+                className="min-h-5 text-center text-xs font-semibold text-rose-100"
+              >
+                {textoMensajeJuego}
+              </p>
 
               {partida.completada && (
-                <p
-                  className={`mt-4 rounded-xl border px-4 py-3 text-sm font-bold ${
-                    partida.victoria
-                      ? 'border-[#a9214d]/50 bg-[#68112c]/50 text-rose-100'
-                      : 'border-[#57132b]/60 bg-black/40 text-rose-200'
-                  }`}
-                  role="status"
-                >
-                  {partida.victoria
-                    ? `¡Acertaste! El jugador era ${jugadorDelDia.nombre}.`
-                    : `Se terminaron los intentos. El jugador era ${jugadorDelDia.nombre}.`}
+                <p className="text-center text-sm font-bold">
+                  {partida.victoria ? '¡Lo encontraste!' : 'Se acabaron los intentos.'}{' '}
+                  El apellido era{' '}
+                  <span className="text-rose-300">{objetivo}</span>.
                 </p>
               )}
-            </section>
 
-            <form
-              onSubmit={enviarIntento}
-              className="mb-5 rounded-2xl border border-[#411123] bg-[#13090e]/90 p-4 sm:p-5"
-            >
-              <label
-                htmlFor="wordle-buscador"
-                className="mb-2 block text-sm font-bold text-slate-200"
-              >
-                Elegí un jugador
-              </label>
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <PlayerAutocomplete
-                  value={busqueda}
-                  seleccionado={jugadorSeleccionado}
-                  jugadores={jugadoresWordle}
-                  intentos={partida.intentos}
-                  deshabilitado={partida.completada}
-                  onChange={cambiarBusqueda}
-                  onSelect={seleccionarJugador}
-                />
-                <button
-                  type="submit"
-                  disabled={!jugadorSeleccionado || partida.completada}
-                  className="shrink-0 rounded-xl bg-[#800020] px-5 py-3 text-sm font-black uppercase tracking-wider text-white shadow-lg transition-colors hover:bg-[#a0002e] disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  Probar
-                </button>
-              </div>
-              {mensajeJuego && (
-                <p role="status" className="mt-2 text-sm text-amber-200">
-                  {mensajeJuego}
-                </p>
-              )}
-            </form>
-
-            <section
-              aria-label="Estadísticas"
-              className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4"
-            >
-              <Estadistica etiqueta="Partidas" valor={estadisticas.partidas} />
-              <Estadistica etiqueta="Victorias" valor={estadisticas.victorias} />
-              <Estadistica
-                etiqueta="Racha actual"
-                valor={estadisticas.rachaActual}
-              />
-              <Estadistica
-                etiqueta="Mejor racha"
-                valor={estadisticas.mejorRacha}
-              />
-            </section>
-
-            {partida.intentos.length > 0 && (
-              <section className="rounded-2xl border border-[#411123] bg-[#13090e]/90 p-4 text-center sm:p-5">
+              {cantidadIntentos > 0 && (
                 <button
                   type="button"
                   onClick={compartirResultado}
-                  className="rounded-xl border border-[#7d1b3c] bg-[#360d1d] px-5 py-3 text-sm font-black uppercase tracking-wider text-rose-100 transition-colors hover:bg-[#50112a]"
+                  className="rounded-full border border-rose-300/40 bg-rose-900/40 px-4 py-2 text-xs font-bold text-rose-100 transition hover:bg-rose-800/60"
                 >
                   Compartir resultado
                 </button>
-                {mensajeCompartir && (
-                  <p
-                    role="status"
-                    className="mt-3 text-sm text-emerald-200"
-                  >
-                    {mensajeCompartir}
-                  </p>
-                )}
-                <p className="mt-3 text-xs text-slate-400">
-                  La grilla muestra tus pistas, nunca el nombre secreto.
-                </p>
-              </section>
-            )}
+              )}
+            </section>
+
+            <section
+              aria-label="Teclado virtual"
+              className="mx-auto w-full max-w-md shrink-0 select-none"
+            >
+              {FILAS_TECLADO.slice(0, 2).map((fila, indiceFila) => (
+                <div
+                  key={fila}
+                  className={`mt-1 grid gap-1 ${
+                    indiceFila === 0
+                      ? 'grid-cols-10'
+                      : 'grid-cols-9 px-2'
+                  }`}
+                >
+                  {fila.split('').map((letra) => {
+                    const estado = estadosTeclado[letra] ?? 'nueva';
+                    return (
+                      <button
+                        key={letra}
+                        type="button"
+                        disabled={!listo || partida.completada}
+                        onClick={() => manejarTecla(letra)}
+                        aria-label={`Letra ${letra}`}
+                        className={`h-11 min-w-0 rounded-md text-xs font-black transition disabled:cursor-default disabled:opacity-65 ${clasesTecla[estado]}`}
+                      >
+                        {letra}
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
+
+              <div className="mt-1 flex gap-1">
+                <button
+                  type="button"
+                  disabled={!listo || partida.completada}
+                  onClick={() => manejarTecla('ENTER')}
+                  className="h-11 min-w-0 flex-[1.5] rounded-md bg-rose-900 px-1 text-[9px] font-black text-white transition hover:bg-rose-800 disabled:cursor-default disabled:opacity-65"
+                >
+                  ENTER
+                </button>
+                {FILAS_TECLADO[2].split('').map((letra) => {
+                  const estado = estadosTeclado[letra] ?? 'nueva';
+                  return (
+                    <button
+                      key={letra}
+                      type="button"
+                      disabled={!listo || partida.completada}
+                      onClick={() => manejarTecla(letra)}
+                      aria-label={`Letra ${letra}`}
+                      className={`h-11 min-w-0 flex-1 rounded-md text-xs font-black transition disabled:cursor-default disabled:opacity-65 ${clasesTecla[estado]}`}
+                    >
+                      {letra}
+                    </button>
+                  );
+                })}
+                <button
+                  type="button"
+                  disabled={!listo || partida.completada}
+                  onClick={() => manejarTecla('BORRAR')}
+                  aria-label="Borrar letra"
+                  className="h-11 min-w-0 flex-[1.5] rounded-md bg-slate-700 px-1 text-[9px] font-black text-white transition hover:bg-slate-600 disabled:cursor-default disabled:opacity-65"
+                >
+                  BORRAR
+                </button>
+              </div>
+            </section>
           </>
         )}
       </div>
@@ -730,171 +855,12 @@ export default function WordleGame() {
   );
 }
 
-function PlayerAutocomplete({
-  value,
-  seleccionado,
-  jugadores,
-  intentos,
-  deshabilitado,
-  onChange,
-  onSelect,
-}: {
-  value: string;
-  seleccionado: string | null;
-  jugadores: Jugador[];
-  intentos: string[];
-  deshabilitado: boolean;
-  onChange: (value: string) => void;
-  onSelect: (nombre: string) => void;
-}) {
-  const [indiceActivo, setIndiceActivo] = useState(-1);
-  const busquedaNormalizada = normalizarTexto(value);
-  const sugerencias =
-    busquedaNormalizada && !seleccionado && !deshabilitado
-      ? jugadores.filter(
-          (jugador) =>
-            !intentos.includes(jugador.nombre) &&
-            [jugador.nombre, ...jugador.alias].some((texto) =>
-              normalizarTexto(texto).includes(busquedaNormalizada),
-            ),
-        )
-      : [];
-  const sugerenciaActiva = sugerencias[indiceActivo];
-
-  const manejarCambio = (evento: ChangeEvent<HTMLInputElement>) => {
-    onChange(evento.target.value);
-    setIndiceActivo(-1);
-  };
-
-  const manejarTecla = (evento: KeyboardEvent<HTMLInputElement>) => {
-    if (!sugerencias.length) {
-      if (evento.key === 'Escape') onChange('');
-      return;
-    }
-
-    if (evento.key === 'ArrowDown') {
-      evento.preventDefault();
-      setIndiceActivo((indice) => (indice + 1) % sugerencias.length);
-    } else if (evento.key === 'ArrowUp') {
-      evento.preventDefault();
-      setIndiceActivo((indice) =>
-        indice <= 0 ? sugerencias.length - 1 : indice - 1,
-      );
-    } else if (evento.key === 'Enter') {
-      evento.preventDefault();
-      onSelect((sugerenciaActiva ?? sugerencias[0]).nombre);
-      setIndiceActivo(-1);
-    } else if (evento.key === 'Escape') {
-      onChange('');
-      setIndiceActivo(-1);
-    }
-  };
-
+function Estadistica({ titulo, valor }: { titulo: string; valor: number }) {
   return (
-    <div className="relative min-w-0 flex-1">
-      {busquedaNormalizada && !seleccionado && !deshabilitado && (
-        <div
-          id="wordle-sugerencias"
-          role="listbox"
-          aria-label="Jugadores"
-          className="absolute inset-x-0 bottom-full z-20 mb-2 max-h-[45dvh] overflow-y-auto rounded-xl border border-[#57132b] bg-[#13090e] p-1.5 shadow-2xl"
-        >
-          {sugerencias.length ? (
-            sugerencias.map((jugador, indice) => (
-              <button
-                key={jugador.nombre}
-                id={`wordle-sugerencia-${indice}`}
-                type="button"
-                role="option"
-                aria-selected={indice === indiceActivo}
-                tabIndex={-1}
-                onClick={() => {
-                  onSelect(jugador.nombre);
-                  setIndiceActivo(-1);
-                }}
-                className={`w-full rounded-lg px-3 py-2.5 text-left text-sm font-semibold transition-colors ${
-                  indice === indiceActivo
-                    ? 'bg-[#800020] text-white'
-                    : 'text-slate-100 hover:bg-[#2b0c18]'
-                }`}
-              >
-                {jugador.nombre}
-              </button>
-            ))
-          ) : (
-            <p className="px-3 py-2.5 text-sm text-slate-400">
-              No hay jugadores disponibles con esa búsqueda.
-            </p>
-          )}
-        </div>
-      )}
-
-      <input
-        id="wordle-buscador"
-        type="text"
-        role="combobox"
-        aria-autocomplete="list"
-        aria-expanded={Boolean(
-          busquedaNormalizada && !seleccionado && !deshabilitado,
-        )}
-        aria-controls={
-          busquedaNormalizada && !seleccionado && !deshabilitado
-            ? 'wordle-sugerencias'
-            : undefined
-        }
-        aria-activedescendant={
-          sugerenciaActiva ? `wordle-sugerencia-${indiceActivo}` : undefined
-        }
-        autoComplete="off"
-        value={value}
-        onChange={manejarCambio}
-        onKeyDown={manejarTecla}
-        disabled={deshabilitado}
-        placeholder="Escribí nombre o apellido..."
-        className="w-full rounded-xl border-2 border-[#4c1428] bg-[#0b0709] px-4 py-3 text-base font-semibold text-white outline-none transition-colors placeholder:font-normal placeholder:text-slate-500 focus:border-[#a91f4b] disabled:opacity-50"
-      />
-    </div>
-  );
-}
-
-function Pista({
-  etiqueta,
-  valor,
-  coincidencia,
-}: {
-  etiqueta: string;
-  valor: string;
-  coincidencia: Coincidencia;
-}) {
-  const descripcion =
-    coincidencia === 'exacta'
-      ? 'Coincidencia exacta'
-      : coincidencia === 'parcial'
-        ? 'Coincidencia parcial'
-        : coincidencia === 'sin-dato'
-          ? 'Dato no disponible'
-          : 'Sin coincidencia';
-
-  return (
-    <div
-      className={`min-w-0 rounded-lg border px-2.5 py-2 ${colorPorCoincidencia[coincidencia]}`}
-      aria-label={`${etiqueta}: ${valor}. ${descripcion}`}
-    >
-      <p className="text-[10px] font-black uppercase tracking-wider opacity-80">
-        {etiqueta}
-      </p>
-      <p className="truncate text-sm font-bold">{valor}</p>
-      <p className="sr-only">{descripcion}</p>
-    </div>
-  );
-}
-
-function Estadistica({ etiqueta, valor }: { etiqueta: string; valor: number }) {
-  return (
-    <div className="rounded-xl border border-[#411123] bg-[#160a10] px-3 py-4 text-center">
-      <p className="text-2xl font-black tabular-nums text-white">{valor}</p>
-      <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-        {etiqueta}
+    <div className="rounded-lg border border-white/10 bg-white/5 px-1 py-1 text-center">
+      <p className="text-base font-black leading-tight sm:text-lg">{valor}</p>
+      <p className="text-[8px] uppercase tracking-wider text-white/55 sm:text-[9px]">
+        {titulo}
       </p>
     </div>
   );

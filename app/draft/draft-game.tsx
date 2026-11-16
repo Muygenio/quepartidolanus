@@ -4,8 +4,10 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import draftPlayers from '../data/draft-players.json';
+import draftTrivia from '../data/draft-trivia.json';
 
 const PRESUPUESTO_INICIAL = 100_000_000;
+const PROBABILIDAD_TRIVIA = 0.2;
 const DURACION_BARAJADO_MS = 1400;
 const DURACION_ANIMACION_DESCUENTO_MS = 1300;
 const FORMACION = '4-4-2';
@@ -43,6 +45,43 @@ type PuestoSeleccionado = {
   posicion: Posicion;
   puesto: number;
 };
+type PreguntaTrivia = (typeof draftTrivia)[number];
+type DificultadTrivia = PreguntaTrivia['dificultad'];
+type EstadoTrivia =
+  | { tipo: 'oferta'; pregunta: PreguntaTrivia }
+  | {
+      tipo: 'pregunta';
+      pregunta: PreguntaTrivia;
+      opciones: string[];
+    }
+  | {
+      tipo: 'resultado';
+      pregunta: PreguntaTrivia;
+      acertada: boolean;
+      cambio: number;
+    };
+
+const PROBABILIDAD_DIFICULTAD: Record<DificultadTrivia, number> = {
+  facil: 60,
+  medio: 25,
+  dificil: 12,
+  imposible: 3,
+};
+const RECOMPENSAS_TRIVIA: Record<
+  DificultadTrivia,
+  { acierto: number; error: number }
+> = {
+  facil: { acierto: 4_000_000, error: 2_000_000 },
+  medio: { acierto: 7_000_000, error: 4_000_000 },
+  dificil: { acierto: 10_000_000, error: 6_000_000 },
+  imposible: { acierto: 15_000_000, error: 10_000_000 },
+};
+const NOMBRES_DIFICULTAD: Record<DificultadTrivia, string> = {
+  facil: 'Fácil',
+  medio: 'Medio',
+  dificil: 'Difícil',
+  imposible: 'Imposible',
+};
 
 for (const jugador of draftPlayers) {
   if (jugador.rating < 45 || jugador.rating > 99) {
@@ -62,6 +101,18 @@ for (const posicion of POSICIONES) {
       `Se necesitan al menos ${CUPOS[posicion]} jugadores para ${posicion}.`,
     );
   }
+}
+
+if (
+  draftTrivia.length === 0 ||
+  draftTrivia.some(
+    (pregunta) =>
+      pregunta.opciones.length !== 4 ||
+      new Set(pregunta.opciones).size !== pregunta.opciones.length ||
+      !pregunta.opciones.includes(pregunta.respuesta),
+  )
+) {
+  throw new Error('El banco de trivia del Draft contiene preguntas inválidas.');
 }
 
 function mezclar<T>(elementos: T[]) {
@@ -105,6 +156,44 @@ function esAsequible(jugador: Jugador, presupuesto: number) {
   return jugador.price <= presupuesto;
 }
 
+function sortearPreguntaTrivia(idsUsados: string[]) {
+  if (Math.random() >= PROBABILIDAD_TRIVIA) return null;
+
+  const preguntasDisponibles = draftTrivia.filter(
+    (pregunta) => !idsUsados.includes(pregunta.id),
+  );
+  if (preguntasDisponibles.length === 0) return null;
+
+  const dificultadesDisponibles = (
+    Object.keys(PROBABILIDAD_DIFICULTAD) as DificultadTrivia[]
+  ).filter((dificultad) =>
+    preguntasDisponibles.some(
+      (pregunta) => pregunta.dificultad === dificultad,
+    ),
+  );
+  const pesoTotal = dificultadesDisponibles.reduce(
+    (total, dificultad) => total + PROBABILIDAD_DIFICULTAD[dificultad],
+    0,
+  );
+  let sorteo = Math.random() * pesoTotal;
+  let dificultadElegida = dificultadesDisponibles[0];
+
+  for (const dificultad of dificultadesDisponibles) {
+    sorteo -= PROBABILIDAD_DIFICULTAD[dificultad];
+    if (sorteo < 0) {
+      dificultadElegida = dificultad;
+      break;
+    }
+  }
+
+  const preguntasDeLaDificultad = preguntasDisponibles.filter(
+    (pregunta) => pregunta.dificultad === dificultadElegida,
+  );
+  return preguntasDeLaDificultad[
+    Math.floor(Math.random() * preguntasDeLaDificultad.length)
+  ];
+}
+
 function categoriaCarta(rating: number) {
   if (rating <= 64) return 'Bronce';
   if (rating <= 74) return 'Plata';
@@ -135,6 +224,10 @@ export default function DraftGame() {
   const [puestoSeleccionado, setPuestoSeleccionado] =
     useState<PuestoSeleccionado | null>(null);
   const [descuentoAnimado, setDescuentoAnimado] = useState<number | null>(null);
+  const [trivia, setTrivia] = useState<EstadoTrivia | null>(null);
+  const [preguntasTriviaUsadas, setPreguntasTriviaUsadas] = useState<string[]>(
+    [],
+  );
   const [iniciado, setIniciado] = useState(false);
   const [mensajeCompartir, setMensajeCompartir] = useState('');
 
@@ -174,6 +267,8 @@ export default function DraftGame() {
     setOpcionesPendientes(null);
     setPuestoSeleccionado(null);
     setDescuentoAnimado(null);
+    setTrivia(null);
+    setPreguntasTriviaUsadas([]);
     setMensajeCompartir('');
     setIniciado(true);
   };
@@ -185,6 +280,7 @@ export default function DraftGame() {
     if (
       !iniciado ||
       terminado ||
+      trivia !== null ||
       puesto < 0 ||
       puesto >= CUPOS[posicion] ||
       equipo.some(
@@ -204,6 +300,7 @@ export default function DraftGame() {
   const elegirJugador = (jugador: Jugador) => {
     if (
       !puestoSeleccionado ||
+      trivia !== null ||
       jugador.position !== puestoSeleccionado.posicion ||
       equipo.some((elegido) => elegido.jugador.id === jugador.id) ||
       equipo.some(
@@ -235,6 +332,42 @@ export default function DraftGame() {
     setOpcionesPendientes(null);
     setPuestoSeleccionado(null);
     setMensajeCompartir('');
+
+    const preguntaTrivia = sortearPreguntaTrivia(preguntasTriviaUsadas);
+    if (preguntaTrivia) {
+      setPreguntasTriviaUsadas((usadas) => [...usadas, preguntaTrivia.id]);
+      setTrivia({ tipo: 'oferta', pregunta: preguntaTrivia });
+    } else {
+      setTrivia(null);
+    }
+  };
+
+  const aceptarTrivia = () => {
+    if (trivia?.tipo !== 'oferta') return;
+
+    setTrivia({
+      tipo: 'pregunta',
+      pregunta: trivia.pregunta,
+      opciones: mezclar(trivia.pregunta.opciones),
+    });
+  };
+
+  const responderTrivia = (respuesta: string) => {
+    if (trivia?.tipo !== 'pregunta') return;
+
+    const acertada = respuesta === trivia.pregunta.respuesta;
+    const recompensa = RECOMPENSAS_TRIVIA[trivia.pregunta.dificultad];
+    const cambio = acertada
+      ? recompensa.acierto
+      : -Math.min(recompensa.error, presupuesto);
+
+    setPresupuesto(Math.max(0, presupuesto + cambio));
+    setTrivia({
+      tipo: 'resultado',
+      pregunta: trivia.pregunta,
+      acertada,
+      cambio,
+    });
   };
 
   const promedio =
@@ -426,7 +559,7 @@ export default function DraftGame() {
                           ) : (
                             <button
                               type="button"
-                              disabled={!iniciado}
+                              disabled={!iniciado || trivia !== null}
                               onClick={() => seleccionarPuesto(posicion, indice)}
                               aria-label={`${NOMBRES_POSICION[posicion]} disponible, puesto ${
                                 indice + 1
@@ -466,6 +599,110 @@ export default function DraftGame() {
               >
                 Empezar draft
               </button>
+            </section>
+          ) : trivia !== null ? (
+            <section className="rounded-2xl border border-[#7d1b3c]/60 bg-gradient-to-br from-[#180a10] to-[#3a0c1d]/80 p-4 text-center shadow-xl md:p-7">
+              {trivia.tipo === 'oferta' ? (
+                <>
+                  <p className="text-xs font-black uppercase tracking-[0.2em] text-rose-200">
+                    Evento especial · Nivel{' '}
+                    {NOMBRES_DIFICULTAD[trivia.pregunta.dificultad]}
+                  </p>
+                  <h2 className="mt-2 text-xl font-black uppercase md:text-2xl">
+                    ¿Te animás a la trivia?
+                  </h2>
+                  <p className="mx-auto mt-2 max-w-xl text-xs leading-relaxed text-slate-300 md:text-sm">
+                    Si acertás, ganás{' '}
+                    {FORMATO_DINERO.format(
+                      RECOMPENSAS_TRIVIA[trivia.pregunta.dificultad].acierto,
+                    )}
+                    . Si fallás, se descuentan hasta{' '}
+                    {FORMATO_DINERO.format(
+                      RECOMPENSAS_TRIVIA[trivia.pregunta.dificultad].error,
+                    )}
+                    . Podés seguir con el Draft sin jugar.
+                  </p>
+                  <div className="mt-4 flex flex-col justify-center gap-2 sm:flex-row">
+                    <button
+                      type="button"
+                      onClick={aceptarTrivia}
+                      className="rounded-xl bg-[#8d1238] px-5 py-2.5 text-xs font-black uppercase tracking-wider text-white transition-colors hover:bg-[#a21b46] md:py-3 md:text-sm"
+                    >
+                      Jugar trivia
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTrivia(null)}
+                      className="rounded-xl border border-[#7d1b3c] bg-[#360d1d] px-5 py-2.5 text-xs font-black uppercase tracking-wider text-rose-100 transition-colors hover:bg-[#50112a] md:py-3 md:text-sm"
+                    >
+                      Seguir con el Draft
+                    </button>
+                  </div>
+                </>
+              ) : trivia.tipo === 'pregunta' ? (
+                <>
+                  <p className="text-xs font-black uppercase tracking-[0.2em] text-rose-200">
+                    Trivia granate · Nivel{' '}
+                    {NOMBRES_DIFICULTAD[trivia.pregunta.dificultad]}
+                  </p>
+                  <h2 className="mx-auto mt-2 max-w-2xl text-lg font-black md:text-2xl">
+                    {trivia.pregunta.pregunta}
+                  </h2>
+                  <div className="mx-auto mt-4 grid max-w-2xl grid-cols-1 gap-2 sm:grid-cols-2">
+                    {trivia.opciones.map((opcion, indice) => (
+                      <button
+                        key={opcion}
+                        type="button"
+                        onClick={() => responderTrivia(opcion)}
+                        className="rounded-xl border border-[#7d1b3c]/70 bg-[#210a13]/80 p-3 text-left text-sm font-bold text-white transition-colors hover:border-rose-200 hover:bg-[#50112a] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-200"
+                      >
+                        <span className="mr-2 text-rose-200">
+                          {String.fromCharCode(65 + indice)}.
+                        </span>
+                        {opcion}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p
+                    role="status"
+                    aria-live="polite"
+                    className="text-xs font-black uppercase tracking-[0.2em] text-rose-200"
+                  >
+                    {NOMBRES_DIFICULTAD[trivia.pregunta.dificultad]} ·{' '}
+                    {trivia.acertada
+                      ? '¡Respuesta correcta!'
+                      : 'Respuesta incorrecta'}
+                  </p>
+                  <h2 className="mt-2 text-xl font-black uppercase md:text-2xl">
+                    {trivia.acertada
+                      ? `Ganaste ${FORMATO_DINERO.format(trivia.cambio)}`
+                      : trivia.cambio < 0
+                        ? `Se descontaron ${FORMATO_DINERO.format(
+                            Math.abs(trivia.cambio),
+                          )}`
+                        : 'No quedaba saldo para descontar'}
+                  </h2>
+                  {!trivia.acertada && (
+                    <p className="mt-2 text-sm text-slate-300">
+                      La respuesta era{' '}
+                      <span className="font-bold text-white">
+                        {trivia.pregunta.respuesta}
+                      </span>
+                      .
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setTrivia(null)}
+                    className="mt-4 rounded-xl bg-[#8d1238] px-5 py-2.5 text-xs font-black uppercase tracking-wider text-white transition-colors hover:bg-[#a21b46] md:py-3 md:text-sm"
+                  >
+                    Volver al Draft
+                  </button>
+                </>
+              )}
             </section>
           ) : terminado ? (
             <section className="rounded-2xl border border-[#7d1b3c]/60 bg-gradient-to-br from-[#180a10] to-[#3a0c1d]/80 p-4 text-center shadow-xl md:p-8">
