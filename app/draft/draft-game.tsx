@@ -303,27 +303,27 @@ export default function DraftGame() {
         </div>
       </header>
 
-      <main className="lanus-watermark relative min-h-dvh bg-[#080609] px-3 pb-10 pt-28 font-sans text-white sm:px-6 sm:pt-32">
+      <main className="lanus-watermark relative min-h-dvh bg-[#080609] px-3 pb-6 pt-28 font-sans text-white sm:px-6 sm:pb-10 sm:pt-32">
         <div className="relative z-10 mx-auto w-full max-w-4xl">
           <Link
             href="/"
-            className="mb-4 inline-flex rounded-lg border border-[#57132b]/70 bg-[#210a13]/70 px-3 py-2 text-sm font-bold text-slate-200 transition-colors hover:bg-[#3a0c1d]"
+            className="mb-3 inline-flex rounded-lg border border-[#57132b]/70 bg-[#210a13]/70 px-3 py-1.5 text-xs font-bold text-slate-200 transition-colors hover:bg-[#3a0c1d] md:mb-4 md:py-2 md:text-sm"
           >
             ← Elegir modo
           </Link>
 
-          <header className="mb-5">
+          <header className="mb-4 md:mb-5">
             <p className="text-xs font-black uppercase tracking-[0.2em] text-rose-200">
               QUEPARTIDO · Draft histórico
             </p>
-            <h1 className="mt-1 text-2xl font-black uppercase tracking-wide sm:text-4xl">
+            <h1 className="mt-1 text-2xl font-black uppercase tracking-wide md:text-4xl">
               Armá tu 11 de Lanús
             </h1>
           </header>
 
           <section
             aria-label={`Formación ${FORMACION}`}
-            className="relative mb-5 overflow-hidden rounded-2xl border-[3px] border-emerald-900 bg-[#173b28] p-3 shadow-[0_15px_35px_rgba(0,0,0,0.65)] sm:p-5"
+            className="relative mb-4 overflow-hidden rounded-2xl border-2 border-emerald-900 bg-[#173b28] p-2 shadow-[0_15px_35px_rgba(0,0,0,0.65)] sm:p-4 md:mb-5 md:border-[3px]"
             style={{
               backgroundImage:
                 'repeating-linear-gradient(180deg, rgba(0,0,0,0.12), rgba(0,0,0,0.12) 34px, transparent 34px, transparent 68px)',
@@ -335,8 +335,8 @@ export default function DraftGame() {
             <div
               className={`relative z-10 flex flex-col justify-around ${
                 iniciado
-                  ? 'min-h-[400px] sm:min-h-[500px]'
-                  : 'min-h-[280px] sm:min-h-[350px]'
+                  ? 'min-h-[320px] sm:min-h-[420px] md:min-h-[480px]'
+                  : 'min-h-[220px] sm:min-h-[300px] md:min-h-[340px]'
               }`}
             >
               {(['DEL', 'MED', 'DEF', 'ARQ'] as const).map((posicion) => (
@@ -375,45 +375,45 @@ export default function DraftGame() {
           </section>
 
           {!iniciado ? (
-            <section className="rounded-2xl border border-[#4d1428] bg-[#150a10] p-5 text-center sm:p-7">
-              <h2 className="text-lg font-black uppercase tracking-wide">
+            <section className="rounded-2xl border border-[#4d1428] bg-[#150a10] p-4 text-center md:p-7">
+              <h2 className="text-base font-black uppercase tracking-wide md:text-lg">
                 Draft 4-4-2
               </h2>
-              <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-slate-300">
+              <p className="mx-auto mt-2 max-w-xl text-xs leading-relaxed text-slate-300 md:text-sm">
                 Elegí 1 arquero, 4 defensores, 4 mediocampistas y 2 delanteros.
                 En cada ronda vas a recibir tres cartas al azar. Las que superen
                 tu presupuesto quedan bloqueadas.
               </p>
-              <p className="mt-3 text-sm font-bold text-rose-100">
+              <p className="mt-3 text-xs font-bold text-rose-100 md:text-sm">
                 Pozo inicial: {FORMATO_DINERO.format(PRESUPUESTO_INICIAL)}
               </p>
               <button
                 type="button"
                 onClick={iniciarDraft}
-                className="mt-5 rounded-xl bg-[#8d1238] px-6 py-3 text-sm font-black uppercase tracking-wider text-white shadow-lg shadow-[#8d1238]/20 transition-colors hover:bg-[#a21b46]"
+                className="mt-4 rounded-xl bg-[#8d1238] px-5 py-2.5 text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-[#8d1238]/20 transition-colors hover:bg-[#a21b46] md:mt-5 md:px-6 md:py-3 md:text-sm"
               >
                 Empezar draft
               </button>
             </section>
           ) : terminado ? (
-            <section className="rounded-2xl border border-[#7d1b3c]/60 bg-gradient-to-br from-[#180a10] to-[#3a0c1d]/80 p-5 text-center shadow-xl sm:p-8">
+            <section className="rounded-2xl border border-[#7d1b3c]/60 bg-gradient-to-br from-[#180a10] to-[#3a0c1d]/80 p-4 text-center shadow-xl md:p-8">
               <p className="text-xs font-black uppercase tracking-[0.2em] text-rose-200">
                 Plantel completo · {FORMACION}
               </p>
-              <h2 className="mt-2 text-2xl font-black uppercase sm:text-3xl">
+              <h2 className="mt-2 text-xl font-black uppercase md:text-3xl">
                 ¡Plantel armado con éxito!
               </h2>
-              <div className="mx-auto mt-5 grid max-w-lg grid-cols-2 gap-3">
-                <div className="rounded-xl border border-[#4c1428] bg-black/40 p-4">
-                  <p className="text-3xl font-black text-white">
+              <div className="mx-auto mt-4 grid max-w-lg grid-cols-1 gap-2 sm:grid-cols-2 md:mt-5 md:gap-3">
+                <div className="rounded-xl border border-[#4c1428] bg-black/40 p-3 md:p-4">
+                  <p className="text-2xl font-black text-white md:text-3xl">
                     {promedio.toFixed(1)}
                   </p>
                   <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                     Media del equipo
                   </p>
                 </div>
-                <div className="rounded-xl border border-[#4c1428] bg-black/40 p-4">
-                  <p className="text-xl font-black text-rose-200 sm:text-2xl">
+                <div className="rounded-xl border border-[#4c1428] bg-black/40 p-3 md:p-4">
+                  <p className="text-lg font-black text-rose-200 md:text-2xl">
                     {FORMATO_DINERO.format(presupuesto)}
                   </p>
                   <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
@@ -421,11 +421,11 @@ export default function DraftGame() {
                   </p>
                 </div>
               </div>
-              <div className="mt-5 flex flex-wrap justify-center gap-3">
+              <div className="mt-4 flex flex-col justify-center gap-2 sm:flex-row sm:flex-wrap md:mt-5 md:gap-3">
                 <button
                   type="button"
                   onClick={copiarEquipo}
-                  className="rounded-xl bg-[#8d1238] px-5 py-3 text-sm font-black uppercase tracking-wider text-white transition-colors hover:bg-[#a21b46]"
+                  className="w-full rounded-xl bg-[#8d1238] px-5 py-2.5 text-xs font-black uppercase tracking-wider text-white transition-colors hover:bg-[#a21b46] sm:w-auto md:py-3 md:text-sm"
                 >
                   Copiar equipo
                 </button>
@@ -435,14 +435,14 @@ export default function DraftGame() {
                   )}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="rounded-xl border border-[#7d1b3c] bg-[#360d1d] px-5 py-3 text-sm font-black uppercase tracking-wider text-rose-100 transition-colors hover:bg-[#50112a]"
+                  className="w-full rounded-xl border border-[#7d1b3c] bg-[#360d1d] px-5 py-2.5 text-xs font-black uppercase tracking-wider text-rose-100 transition-colors hover:bg-[#50112a] sm:w-auto md:py-3 md:text-sm"
                 >
                   Compartir por WhatsApp
                 </a>
                 <button
                   type="button"
                   onClick={iniciarDraft}
-                  className="rounded-xl border border-[#57132b] px-5 py-3 text-sm font-black uppercase tracking-wider text-slate-200 transition-colors hover:bg-[#210a13]"
+                  className="w-full rounded-xl border border-[#57132b] px-5 py-2.5 text-xs font-black uppercase tracking-wider text-slate-200 transition-colors hover:bg-[#210a13] sm:w-auto md:py-3 md:text-sm"
                 >
                   Nuevo draft
                 </button>
@@ -454,17 +454,17 @@ export default function DraftGame() {
               )}
             </section>
           ) : (
-            <section className="rounded-2xl border border-[#411123] bg-[#13090e]/95 p-4 sm:p-6">
-              <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+            <section className="rounded-2xl border border-[#411123] bg-[#13090e]/95 p-3 md:p-6">
+              <div className="mb-3 flex flex-wrap items-end justify-between gap-2 md:mb-4">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
                     Ronda {equipo.length + 1} de {ORDEN_RONDAS.length}
                   </p>
-                  <h2 className="mt-1 text-xl font-black">
+                  <h2 className="mt-1 text-base font-black md:text-xl">
                     Elegí un {NOMBRES_POSICION[posicionActual].toLowerCase()}
                   </h2>
                 </div>
-                <p className="text-xs font-semibold text-slate-400">
+                <p className="text-[11px] font-semibold text-slate-400 md:text-xs">
                   {CUPOS[posicionActual] -
                     equipo.filter((elegido) => elegido.posicion === posicionActual)
                       .length}{' '}
@@ -478,16 +478,16 @@ export default function DraftGame() {
                   aria-live="polite"
                   className="py-2 text-center"
                 >
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+                  <div className="grid grid-cols-1 gap-2 md:grid-cols-3 md:gap-4">
                     {Array.from({ length: 3 }, (_, indice) => (
                       <div
                         key={indice}
                         aria-hidden="true"
                         style={{ animationDelay: `${indice * 120}ms` }}
-                        className="draft-shuffle-card relative mx-auto flex min-h-64 w-full max-w-[260px] flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-[#8d2346]/80 bg-gradient-to-br from-[#260b16] via-[#13090e] to-[#4a1425] text-rose-100 shadow-lg"
+                        className="draft-shuffle-card relative mx-auto flex min-h-[220px] w-full max-w-[240px] flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-[#8d2346]/80 bg-gradient-to-br from-[#260b16] via-[#13090e] to-[#4a1425] text-rose-100 shadow-lg md:min-h-64 md:max-w-[256px]"
                       >
                         <div className="absolute inset-2 rounded-xl border border-rose-100/20" />
-                        <span className="text-5xl" aria-hidden="true">
+                        <span className="text-4xl md:text-5xl" aria-hidden="true">
                           ⚽
                         </span>
                         <span className="mt-3 text-[10px] font-black uppercase tracking-[0.25em]">
@@ -496,7 +496,7 @@ export default function DraftGame() {
                       </div>
                     ))}
                   </div>
-                  <p className="mt-4 text-sm font-bold uppercase tracking-wider text-rose-200">
+                  <p className="mt-3 text-xs font-bold uppercase tracking-wider text-rose-200 md:mt-4 md:text-sm">
                     Barajando las opciones…
                   </p>
                 </div>
@@ -505,7 +505,7 @@ export default function DraftGame() {
                   {sinPresupuesto && (
                     <div
                       role="alert"
-                      className="mb-4 rounded-xl border border-rose-500/40 bg-rose-950/40 p-4 text-sm text-rose-100"
+                      className="mb-3 rounded-xl border border-rose-500/40 bg-rose-950/40 p-3 text-xs text-rose-100 md:mb-4 md:p-4 md:text-sm"
                     >
                       <p className="font-bold">
                         Ninguna de estas cartas entra en el presupuesto restante.
@@ -523,7 +523,7 @@ export default function DraftGame() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+                  <div className="grid grid-cols-1 gap-2 md:grid-cols-3 md:gap-4">
                     {opciones.map((jugador) => {
                       const asequible = esAsequible(jugador, presupuesto);
                       return (
@@ -572,14 +572,16 @@ function CartaJugador({
             }
           : undefined
       }
-      className={`relative mx-auto flex min-h-64 w-full max-w-[260px] flex-col justify-between overflow-hidden rounded-2xl border p-4 text-slate-950 shadow-lg transition-transform group-hover:scale-[1.02] ${estiloCarta(jugador.rating)} ${
+      className={`relative mx-auto flex min-h-[228px] w-full max-w-[240px] flex-col justify-between overflow-hidden rounded-2xl border p-3 text-slate-950 shadow-lg transition-transform group-hover:scale-[1.02] md:min-h-[280px] md:max-w-[256px] md:p-4 ${estiloCarta(jugador.rating)} ${
         asequible ? '' : 'opacity-60'
       }`}
     >
       <div className="absolute inset-2 rounded-xl border border-slate-950/15" />
       <div className="relative flex items-start justify-between">
         <div>
-          <p className="text-4xl font-black leading-none">{jugador.rating}</p>
+          <p className="text-3xl font-black leading-none md:text-4xl">
+            {jugador.rating}
+          </p>
           <p className="mt-1 text-xs font-black uppercase tracking-widest">
             {jugador.position}
           </p>
@@ -588,29 +590,31 @@ function CartaJugador({
           {categoriaCarta(jugador.rating)}
         </span>
       </div>
-      <div className="relative py-4 text-center">
-        <p className="text-lg font-black leading-tight">{jugador.name}</p>
+      <div className="relative py-2 text-center md:py-4">
+        <p className="text-base font-black leading-tight md:text-lg">
+          {jugador.name}
+        </p>
         <Image
           src="/escudo-lanus-2025.png"
           alt=""
           width={56}
           height={57}
-          className="mx-auto mt-1 h-14 w-14 object-contain drop-shadow-sm"
+          className="mx-auto mt-1 h-10 w-10 object-contain drop-shadow-sm md:h-14 md:w-14"
         />
-        <p className="mt-1 text-[10px] font-black uppercase tracking-[0.2em] opacity-70">
+        <p className="mt-1 text-[9px] font-black uppercase tracking-[0.16em] opacity-70 md:text-[10px] md:tracking-[0.2em]">
           Club Atlético Lanús
         </p>
       </div>
-      <div className="relative border-t border-slate-950/20 pt-2 text-center">
-        <div className="rounded-lg bg-white/35 px-2 py-1.5">
+      <div className="relative border-t border-slate-950/20 pt-1.5 text-center md:pt-2">
+        <div className="rounded-lg bg-white/35 px-2 py-1">
           <p className="text-[9px] font-black uppercase tracking-wider opacity-70">
             Precio
           </p>
-          <p className="whitespace-nowrap text-xl font-black leading-tight sm:text-2xl">
+          <p className="whitespace-nowrap text-lg font-black leading-tight md:text-2xl">
             {FORMATO_DINERO.format(jugador.price)}
           </p>
         </div>
-        <div className="mt-2 grid grid-cols-2 gap-2">
+        <div className="mt-1.5 grid grid-cols-2 gap-2 md:mt-2">
           <EstadisticaCarta
             etiqueta="Partidos"
             valor={
@@ -630,7 +634,7 @@ function CartaJugador({
         </div>
       </div>
       {!asequible && (
-        <p className="relative mt-2 text-center text-[10px] font-black uppercase tracking-wider">
+        <p className="relative mt-1 text-center text-[9px] font-black uppercase tracking-wider md:mt-2 md:text-[10px]">
           Presupuesto insuficiente
         </p>
       )}
@@ -650,7 +654,7 @@ function EstadisticaCarta({
       <p className="truncate text-[8px] font-black uppercase tracking-wider opacity-70">
         {etiqueta}
       </p>
-      <p className="truncate text-xs font-black">{valor}</p>
+      <p className="truncate text-[11px] font-black md:text-xs">{valor}</p>
     </div>
   );
 }
