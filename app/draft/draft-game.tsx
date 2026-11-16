@@ -10,25 +10,16 @@ const DURACION_BARAJADO_MS = 1400;
 const DURACION_ANIMACION_DESCUENTO_MS = 1300;
 const FORMACION = '4-4-2';
 const POSICIONES = ['ARQ', 'DEF', 'MED', 'DEL'] as const;
-const ORDEN_RONDAS: Posicion[] = [
-  'ARQ',
-  'DEF',
-  'DEF',
-  'DEF',
-  'DEF',
-  'MED',
-  'MED',
-  'MED',
-  'MED',
-  'DEL',
-  'DEL',
-];
 const CUPOS: Record<Posicion, number> = {
   ARQ: 1,
   DEF: 4,
   MED: 4,
   DEL: 2,
 };
+const TOTAL_JUGADORES = POSICIONES.reduce(
+  (total, posicion) => total + CUPOS[posicion],
+  0,
+);
 const NOMBRES_POSICION: Record<Posicion, string> = {
   ARQ: 'Arquero',
   DEF: 'Defensor',
@@ -46,6 +37,11 @@ type Jugador = (typeof draftPlayers)[number];
 type JugadorElegido = {
   jugador: Jugador;
   posicion: Posicion;
+  puesto: number;
+};
+type PuestoSeleccionado = {
+  posicion: Posicion;
+  puesto: number;
 };
 
 for (const jugador of draftPlayers) {
@@ -58,8 +54,13 @@ for (const jugador of draftPlayers) {
 }
 
 for (const posicion of POSICIONES) {
-  if (draftPlayers.filter((jugador) => jugador.position === posicion).length < 3) {
-    throw new Error(`Se necesitan al menos tres jugadores para ${posicion}.`);
+  if (
+    draftPlayers.filter((jugador) => jugador.position === posicion).length <
+    CUPOS[posicion]
+  ) {
+    throw new Error(
+      `Se necesitan al menos ${CUPOS[posicion]} jugadores para ${posicion}.`,
+    );
   }
 }
 
@@ -131,6 +132,8 @@ export default function DraftGame() {
   const [opcionesPendientes, setOpcionesPendientes] = useState<Jugador[] | null>(
     null,
   );
+  const [puestoSeleccionado, setPuestoSeleccionado] =
+    useState<PuestoSeleccionado | null>(null);
   const [descuentoAnimado, setDescuentoAnimado] = useState<number | null>(null);
   const [iniciado, setIniciado] = useState(false);
   const [mensajeCompartir, setMensajeCompartir] = useState('');
@@ -156,11 +159,11 @@ export default function DraftGame() {
     return () => window.clearTimeout(timeout);
   }, [descuentoAnimado]);
 
-  const terminado = equipo.length === ORDEN_RONDAS.length;
-  const posicionActual = ORDEN_RONDAS[equipo.length];
+  const terminado = equipo.length === TOTAL_JUGADORES;
   const sinPresupuesto =
     iniciado &&
     !terminado &&
+    puestoSeleccionado !== null &&
     opciones.length > 0 &&
     opciones.every((jugador) => !esAsequible(jugador, presupuesto));
 
@@ -168,40 +171,70 @@ export default function DraftGame() {
     setEquipo([]);
     setPresupuesto(PRESUPUESTO_INICIAL);
     setOpciones([]);
-    setOpcionesPendientes(
-      repartirOpciones('ARQ', [], PRESUPUESTO_INICIAL),
-    );
+    setOpcionesPendientes(null);
+    setPuestoSeleccionado(null);
     setDescuentoAnimado(null);
     setMensajeCompartir('');
     setIniciado(true);
   };
 
+  const seleccionarPuesto = (posicion: Posicion, puesto: number) => {
+    const cantidadElegida = equipo.filter(
+      (elegido) => elegido.posicion === posicion,
+    ).length;
+    if (
+      !iniciado ||
+      terminado ||
+      puesto < 0 ||
+      puesto >= CUPOS[posicion] ||
+      equipo.some(
+        (elegido) =>
+          elegido.posicion === posicion && elegido.puesto === puesto,
+      ) ||
+      cantidadElegida >= CUPOS[posicion]
+    ) {
+      return;
+    }
+
+    setPuestoSeleccionado({ posicion, puesto });
+    setOpciones([]);
+    setOpcionesPendientes(repartirOpciones(posicion, equipo, presupuesto));
+  };
+
   const elegirJugador = (jugador: Jugador) => {
-    if (!posicionActual || !esAsequible(jugador, presupuesto)) return;
+    if (
+      !puestoSeleccionado ||
+      jugador.position !== puestoSeleccionado.posicion ||
+      equipo.some((elegido) => elegido.jugador.id === jugador.id) ||
+      equipo.some(
+        (elegido) =>
+          elegido.posicion === puestoSeleccionado.posicion &&
+          elegido.puesto === puestoSeleccionado.puesto,
+      ) ||
+      equipo.filter(
+        (elegido) => elegido.posicion === puestoSeleccionado.posicion,
+      ).length >= CUPOS[puestoSeleccionado.posicion] ||
+      !esAsequible(jugador, presupuesto)
+    ) {
+      return;
+    }
 
     const siguienteEquipo = [
       ...equipo,
-      { jugador, posicion: posicionActual },
+      {
+        jugador,
+        posicion: puestoSeleccionado.posicion,
+        puesto: puestoSeleccionado.puesto,
+      },
     ];
     const siguientePresupuesto = presupuesto - jugador.price;
     setEquipo(siguienteEquipo);
     setPresupuesto(siguientePresupuesto);
     setDescuentoAnimado(jugador.price);
     setOpciones([]);
+    setOpcionesPendientes(null);
+    setPuestoSeleccionado(null);
     setMensajeCompartir('');
-
-    if (siguienteEquipo.length < ORDEN_RONDAS.length) {
-      const siguientePosicion = ORDEN_RONDAS[siguienteEquipo.length];
-      setOpcionesPendientes(
-        repartirOpciones(
-          siguientePosicion,
-          siguienteEquipo,
-          siguientePresupuesto,
-        ),
-      );
-    } else {
-      setOpcionesPendientes(null);
-    }
   };
 
   const promedio =
@@ -247,10 +280,14 @@ export default function DraftGame() {
     }
   };
 
-  const jugadoresDelCampo = (posicion: Posicion) =>
-    equipo
-      .filter((elegido) => elegido.posicion === posicion)
-      .map(({ jugador }) => jugador);
+  const cantidadPorPosicion = (posicion: Posicion) =>
+    equipo.filter((elegido) => elegido.posicion === posicion).length;
+
+  const jugadorEnPuesto = (posicion: Posicion, puesto: number) =>
+    equipo.find(
+      (elegido) =>
+        elegido.posicion === posicion && elegido.puesto === puesto,
+    )?.jugador;
 
   return (
     <>
@@ -339,38 +376,73 @@ export default function DraftGame() {
                   : 'min-h-[220px] sm:min-h-[300px] md:min-h-[340px]'
               }`}
             >
-              {(['DEL', 'MED', 'DEF', 'ARQ'] as const).map((posicion) => (
-                <div
-                  key={posicion}
-                  className="flex items-center justify-center gap-1.5 sm:gap-3"
-                  aria-label={`${NOMBRES_POSICION[posicion]}: ${
-                    jugadoresDelCampo(posicion).length
-                  } de ${CUPOS[posicion]}`}
-                >
-                  {Array.from({ length: CUPOS[posicion] }, (_, indice) => {
-                    const jugador = jugadoresDelCampo(posicion)[indice];
-                    return (
-                      <div
-                        key={`${posicion}-${indice}`}
-                        className="flex w-[23%] max-w-[92px] flex-col items-center"
-                      >
+              {(['DEL', 'MED', 'DEF', 'ARQ'] as const).map((posicion) => {
+                return (
+                  <div
+                    key={posicion}
+                    role="group"
+                    className="flex items-center justify-center gap-1.5 sm:gap-3"
+                    aria-label={`${NOMBRES_POSICION[posicion]}: ${
+                      cantidadPorPosicion(posicion)
+                    } de ${CUPOS[posicion]}`}
+                  >
+                    {Array.from({ length: CUPOS[posicion] }, (_, indice) => {
+                      const jugador = jugadorEnPuesto(posicion, indice);
+                      const seleccionada =
+                        puestoSeleccionado?.posicion === posicion &&
+                        puestoSeleccionado.puesto === indice;
+                      const contenido = (
+                        <>
+                          <span
+                            className={`flex h-9 w-9 items-center justify-center rounded-full border-2 text-xs font-black shadow-md transition-colors sm:h-12 sm:w-12 ${
+                              jugador
+                                ? 'border-rose-100 bg-gradient-to-br from-rose-100 to-[#9c1b42] text-white'
+                                : seleccionada
+                                  ? 'border-rose-100 bg-rose-900/80 text-white ring-2 ring-rose-300/50'
+                                  : 'border-dashed border-white/40 bg-slate-950/40 text-white/70'
+                            }`}
+                          >
+                            {jugador ? jugador.rating : '+'}
+                          </span>
+                          <span
+                            className={`mt-1 max-w-full truncate rounded px-1.5 py-0.5 text-center text-[9px] font-bold text-white sm:text-[11px] ${
+                              seleccionada ? 'bg-rose-900/80' : 'bg-slate-950/70'
+                            }`}
+                          >
+                            {jugador ? jugador.name : posicion}
+                          </span>
+                        </>
+                      );
+
+                      return (
                         <div
-                          className={`flex h-9 w-9 items-center justify-center rounded-full border-2 text-xs font-black shadow-md sm:h-12 sm:w-12 ${
-                            jugador
-                              ? 'border-rose-100 bg-gradient-to-br from-rose-100 to-[#9c1b42] text-white'
-                              : 'border-dashed border-white/40 bg-slate-950/40 text-white/70'
-                          }`}
+                          key={`${posicion}-${indice}`}
+                          className="flex w-[23%] max-w-[92px] flex-col items-center"
                         >
-                          {jugador ? jugador.rating : '+'}
+                          {jugador ? (
+                            <div className="flex w-full flex-col items-center">
+                              {contenido}
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              disabled={!iniciado}
+                              onClick={() => seleccionarPuesto(posicion, indice)}
+                              aria-label={`${NOMBRES_POSICION[posicion]} disponible, puesto ${
+                                indice + 1
+                              }. Tocar para elegir.`}
+                              aria-pressed={seleccionada}
+                              className="flex w-full flex-col items-center rounded-lg p-0 transition-transform hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-200 disabled:cursor-default"
+                            >
+                              {contenido}
+                            </button>
+                          )}
                         </div>
-                        <span className="mt-1 max-w-full truncate rounded bg-slate-950/70 px-1.5 py-0.5 text-center text-[9px] font-bold text-white sm:text-[11px]">
-                          {jugador ? jugador.name : posicion}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              ))}
+                      );
+                    })}
+                  </div>
+                );
+              })}
             </div>
           </section>
 
@@ -381,8 +453,8 @@ export default function DraftGame() {
               </h2>
               <p className="mx-auto mt-2 max-w-xl text-xs leading-relaxed text-slate-300 md:text-sm">
                 Elegí 1 arquero, 4 defensores, 4 mediocampistas y 2 delanteros.
-                En cada ronda vas a recibir tres cartas al azar. Las que superen
-                tu presupuesto quedan bloqueadas.
+                Tocá un puesto vacío en la cancha para ver tres cartas de esa
+                posición. Las que superen tu presupuesto quedan bloqueadas.
               </p>
               <p className="mt-3 text-xs font-bold text-rose-100 md:text-sm">
                 Pozo inicial: {FORMATO_DINERO.format(PRESUPUESTO_INICIAL)}
@@ -458,21 +530,36 @@ export default function DraftGame() {
               <div className="mb-3 flex flex-wrap items-end justify-between gap-2 md:mb-4">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                    Ronda {equipo.length + 1} de {ORDEN_RONDAS.length}
+                    Elección {equipo.length + 1} de {TOTAL_JUGADORES}
                   </p>
                   <h2 className="mt-1 text-base font-black md:text-xl">
-                    Elegí un {NOMBRES_POSICION[posicionActual].toLowerCase()}
+                    {puestoSeleccionado
+                      ? `Elegí un ${NOMBRES_POSICION[puestoSeleccionado.posicion].toLowerCase()}`
+                      : 'Elegí un puesto en la cancha'}
                   </h2>
                 </div>
                 <p className="text-[11px] font-semibold text-slate-400 md:text-xs">
-                  {CUPOS[posicionActual] -
-                    equipo.filter((elegido) => elegido.posicion === posicionActual)
-                      .length}{' '}
-                  cupos restantes
+                  {puestoSeleccionado
+                    ? `${
+                        CUPOS[puestoSeleccionado.posicion] -
+                        equipo.filter(
+                          (elegido) =>
+                            elegido.posicion === puestoSeleccionado.posicion,
+                        ).length
+                      } cupos restantes`
+                    : 'Tocá un puesto vacío para ver sus cartas'}
                 </p>
               </div>
 
-              {opcionesPendientes !== null ? (
+              {puestoSeleccionado === null ? (
+                <p
+                  role="status"
+                  className="rounded-xl border border-white/10 bg-black/20 p-3 text-center text-xs text-slate-300 md:text-sm"
+                >
+                  Elegí cualquier puesto vacío de la cancha para ver opciones de
+                  esa posición.
+                </p>
+              ) : opcionesPendientes !== null ? (
                 <div
                   role="status"
                   aria-live="polite"
