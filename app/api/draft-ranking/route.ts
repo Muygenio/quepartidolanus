@@ -1,4 +1,4 @@
-import { sql } from '@vercel/postgres';
+import { neon, type NeonQueryFunction } from '@neondatabase/serverless';
 
 type EntradaRanking = {
   id: number;
@@ -8,7 +8,15 @@ type EntradaRanking = {
   created_at: string;
 };
 
-async function asegurarTabla() {
+function obtenerSql() {
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) return null;
+  return neon(connectionString);
+}
+
+async function asegurarTabla<ArrayMode extends boolean, FullResults extends boolean>(
+  sql: NeonQueryFunction<ArrayMode, FullResults>,
+) {
   await sql`
     CREATE TABLE IF NOT EXISTS draft_rankings (
       id SERIAL PRIMARY KEY,
@@ -37,9 +45,17 @@ async function asegurarTabla() {
 }
 
 export async function GET() {
+  const sql = obtenerSql();
+  if (!sql) {
+    return Response.json(
+      { error: 'Ranking sin configurar: falta la variable DATABASE_URL de Neon.' },
+      { status: 503 },
+    );
+  }
+
   try {
-    await asegurarTabla();
-    const { rows } = await sql`
+    await asegurarTabla(sql);
+    const rows = await sql`
       SELECT id, name, average, remaining_budget, created_at
       FROM draft_rankings
       ORDER BY average DESC, remaining_budget DESC, created_at ASC
@@ -55,15 +71,24 @@ export async function GET() {
         created_at: String(row.created_at),
       })),
     });
-  } catch {
+  } catch (error) {
+    console.error('No se pudo consultar el ranking del Draft:', error);
     return Response.json(
-      { error: 'El ranking global no está disponible.' },
+      { error: 'No se pudo consultar el ranking de Neon.' },
       { status: 503 },
     );
   }
 }
 
 export async function POST(request: Request) {
+  const sql = obtenerSql();
+  if (!sql) {
+    return Response.json(
+      { error: 'Ranking sin configurar: falta la variable DATABASE_URL de Neon.' },
+      { status: 503 },
+    );
+  }
+
   try {
     const body = await request.json();
     const name =
@@ -109,8 +134,8 @@ export async function POST(request: Request) {
       );
     }
 
-    await asegurarTabla();
-    const { rows } = await sql`
+    await asegurarTabla(sql);
+    const rows = await sql`
       INSERT INTO draft_rankings (name, average, remaining_budget, team_ids)
       VALUES (
         ${name},
@@ -131,9 +156,10 @@ export async function POST(request: Request) {
         created_at: String(row.created_at),
       } satisfies EntradaRanking,
     });
-  } catch {
+  } catch (error) {
+    console.error('No se pudo publicar el resultado del Draft:', error);
     return Response.json(
-      { error: 'No se pudo publicar el resultado.' },
+      { error: 'No se pudo guardar el resultado en Neon.' },
       { status: 503 },
     );
   }

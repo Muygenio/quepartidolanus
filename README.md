@@ -32,10 +32,16 @@ imágenes con permiso de uso.
 
 ## Ranking global del Draft
 
-El ranking se guarda en Vercel Postgres. En el proyecto de Vercel, agregá una base
-de datos Postgres y vinculala al despliegue para que genere las variables de entorno
-necesarias. La tabla `draft_rankings` se crea automáticamente al consultar o publicar
-en `/api/draft-ranking`.
+El ranking se guarda en Neon con el driver `@neondatabase/serverless`. Creá una base
+en Neon y configurá su cadena de conexión como `DATABASE_URL`:
+
+- En Vercel, agregá `DATABASE_URL` en Settings → Environment Variables para los
+  entornos que uses y volvé a desplegar.
+- Para desarrollo local, guardá `DATABASE_URL=...` en `.env.local` y reiniciá
+  `npm run dev`. No compartas ni subas ese archivo al repositorio.
+
+La tabla `draft_rankings` y el resultado histórico de Theo (83.5) se crean
+automáticamente cuando `/api/draft-ranking` logra conectarse por primera vez.
 
 ## Learn More
 

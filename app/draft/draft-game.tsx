@@ -280,15 +280,22 @@ export default function DraftGame() {
 
     void fetch('/api/draft-ranking')
       .then(async (respuesta) => {
-        if (!respuesta.ok) throw new Error();
-        const datos = (await respuesta.json()) as { ranking: EntradaRanking[] };
-        setRanking(datos.ranking);
+        const datos = (await respuesta.json()) as {
+          ranking?: EntradaRanking[];
+          error?: string;
+        };
+        if (!respuesta.ok) {
+          throw new Error(datos.error ?? 'No se pudo cargar el ranking.');
+        }
+        setRanking(datos.ranking ?? []);
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         setMensajeRanking(
-          'El ranking global todavía no está disponible en este despliegue.',
+          error instanceof Error
+            ? error.message
+            : 'No se pudo cargar el ranking.',
         );
-      })
+      });
   }, [terminado]);
 
   const iniciarDraft = () => {
