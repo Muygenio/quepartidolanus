@@ -616,16 +616,31 @@ export default function DraftGame() {
                       const contenido = (
                         <>
                           <span
-                            className={`flex h-9 w-9 items-center justify-center rounded-full border-2 text-xs font-black shadow-md transition-colors sm:h-12 sm:w-12 ${
+                            className={`relative flex h-9 w-9 items-center justify-center rounded-full border-2 text-xs font-black shadow-md transition-colors sm:h-12 sm:w-12 ${
                               jugador
-                                ? 'border-rose-100 bg-gradient-to-br from-rose-100 to-[#9c1b42] text-white'
+                                ? 'border-rose-100 bg-[#260a14] text-white'
                                 : seleccionada
                                   ? 'border-rose-100 bg-rose-900/80 text-white ring-2 ring-rose-300/50'
                                   : 'border-dashed border-white/40 bg-slate-950/40 text-white/70'
                             }`}
                           >
-                            {jugador ? jugador.rating : '+'}
+                            {jugador ? (
+                              <>
+                                <PlayerPhoto
+                                  name={jugador.name}
+                                  photoId={jugador.id}
+                                  className="h-full w-full"
+                                />
+                              </>
+                            ) : (
+                              '+'
+                            )}
                           </span>
+                          {jugador && (
+                            <span className="mt-1 flex min-w-8 items-center justify-center rounded-md border border-amber-200/80 bg-gradient-to-b from-[#a21b46] to-[#5b102b] px-2 py-0.5 text-[11px] font-black leading-none text-white shadow-[0_2px_8px_rgba(0,0,0,0.55)] sm:min-w-10 sm:py-1 sm:text-sm">
+                              {jugador.rating}
+                            </span>
+                          )}
                           <span
                             className={`mt-1 max-w-full truncate rounded px-1.5 py-0.5 text-center text-[9px] font-bold text-white sm:text-[11px] ${
                               seleccionada ? 'bg-rose-900/80' : 'bg-slate-950/70'
