@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type ChangeEvent, type KeyboardEvent } from 'react';
+import PlayerPhoto from './player-photo';
 
 type JugadorBuscable = {
   nombre: string;
@@ -102,7 +103,13 @@ export default function PlayerSearch({
                     : 'text-slate-100 hover:bg-[#2b0c18]'
                 }`}
               >
-                <span>{jugador.nombre}</span>
+                <span className="flex items-center gap-3">
+                  <PlayerPhoto
+                    name={jugador.nombre}
+                    className="h-9 w-9 text-sm"
+                  />
+                  <span>{jugador.nombre}</span>
+                </span>
               </button>
             ))
           ) : (

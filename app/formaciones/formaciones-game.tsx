@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState, type ReactNode } from 'react';
 import formaciones from '../data/lanus.json';
 import PlayerSearch from '../player-search';
+import PlayerPhoto from '../player-photo';
 
 type Partido = (typeof formaciones)[number];
 type Jugador = Partido['titulares'][number];
@@ -292,9 +293,21 @@ function Ficha({
   return (
     <div className="group relative flex w-[22%] flex-col items-center sm:w-20">
       <div
-        className={`flex h-11 w-11 items-center justify-center rounded-full text-xs font-black transition-all duration-300 ease-out sm:h-12 sm:w-12 ${estilosIman}`}
+        className={`relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full text-xs font-black transition-all duration-300 ease-out sm:h-12 sm:w-12 ${estilosIman}`}
       >
-        {jugador.pos}
+        {acertado || rendido ? (
+          <>
+            <PlayerPhoto
+              name={jugador.nombre}
+              className="h-full w-full text-sm"
+            />
+            <span className="absolute bottom-0 right-0 rounded-tl bg-black/80 px-1 text-[7px] leading-tight text-white">
+              {jugador.pos}
+            </span>
+          </>
+        ) : (
+          jugador.pos
+        )}
       </div>
       <span
         className={`mt-1.5 flex min-h-[2rem] items-start justify-center rounded bg-black/50 px-1 text-center text-[11px] leading-tight tracking-wide sm:text-xs ${colorTexto}`}

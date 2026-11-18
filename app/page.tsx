@@ -10,6 +10,16 @@ export const metadata: Metadata = {
 const modos = [
   {
     numero: '01',
+    icono: '🏆',
+    etiqueta: 'Armá tu equipo',
+    titulo: 'FUT Draft',
+    descripcion:
+      'Elegí tu once histórico carta por carta, cuidá el presupuesto y subí tu valoración al ranking.',
+    accion: 'Armar mi 11',
+    href: '/draft',
+  },
+  {
+    numero: '02',
     icono: '⚽',
     etiqueta: 'El clásico',
     titulo: 'Trivia de formaciones',
@@ -19,24 +29,14 @@ const modos = [
     href: '/formaciones',
   },
   {
-    numero: '02',
-    icono: '🔎',
-    etiqueta: 'Desafío diario',
-    titulo: 'Jugador Misterioso',
-    descripcion:
-      'Descubrí al jugador del día usando pistas de su carrera y sus estadísticas.',
-    accion: 'Adivinar jugador',
-    href: '/jugador-misterioso',
-  },
-  {
     numero: '03',
-    icono: '🏆',
-    etiqueta: 'Armá tu equipo',
-    titulo: 'FUT Draft',
+    icono: '🔤',
+    etiqueta: 'Desafío diario',
+    titulo: 'Wordle Granate',
     descripcion:
-      'Elegí tu once histórico carta por carta y cuidá el presupuesto.',
-    accion: 'Armar mi 11',
-    href: '/draft',
+      'Adiviná el apellido del jugador granate del día en seis intentos.',
+    accion: 'Jugar Wordle',
+    href: '/wordle',
   },
 ];
 
@@ -71,7 +71,7 @@ export default function Home() {
 
         <section
           aria-label="Modos de juego"
-          className="mt-9 grid flex-1 content-center gap-4 sm:mt-12 md:grid-cols-3 md:gap-5"
+          className="mt-9 grid flex-1 content-center gap-4 sm:mt-12"
         >
           {modos.map((modo) => (
             <Link

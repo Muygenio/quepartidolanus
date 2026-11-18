@@ -1,4 +1,5 @@
 [
+  { "id": "jose-perassi", "name": "José Perassi", "position": "ARQ", "rating": 77, "price": 6000000, "matches": 311, "goals": 0 },
   { "id": "nahuel-losada", "name": "Nahuel Losada", "position": "ARQ", "rating": 80, "price": 9000000, "matches": null, "goals": null },
   { "id": "fernando-monetti", "name": "Fernando Monetti", "position": "ARQ", "rating": 81, "price": 10000000, "matches": null, "goals": null },
   { "id": "esteban-andrada", "name": "Esteban Andrada", "position": "ARQ", "rating": 84, "price": 12000000, "matches": null, "goals": null },
@@ -27,7 +28,6 @@
   { "id": "miguel-almiron", "name": "Miguel Almirón", "position": "MED", "rating": 88, "price": 16000000, "matches": null, "goals": null },
   { "id": "hector-guidi", "name": "Héctor Guidi", "position": "MED", "rating": 86, "price": 14000000, "matches": 320, "goals": 0 },
   { "id": "agustin-pelletieri", "name": "Agustín Pelletieri", "position": "MED", "rating": 81, "price": 9000000, "matches": 247, "goals": 0 },
-  { "id": "jose-perassi", "name": "José Perassi", "position": "MED", "rating": 77, "price": 6000000, "matches": 311, "goals": 0 },
   { "id": "atilio-ducca", "name": "Atilio Ducca", "position": "MED", "rating": 76, "price": 5500000, "matches": 291, "goals": 0 },
   { "id": "rolando-bertolini", "name": "Rolando Bertolini", "position": "MED", "rating": 74, "price": 4500000, "matches": 237, "goals": 0 },
   { "id": "osvaldo-gil", "name": "Osvaldo R. Gil", "position": "MED", "rating": 73, "price": 4000000, "matches": 0, "goals": 48 },

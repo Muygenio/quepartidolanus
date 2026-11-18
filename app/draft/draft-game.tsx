@@ -1,8 +1,8 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import PlayerPhoto from '../player-photo';
 import draftPlayers from '../data/draft-players.json';
 import draftTrivia from '../data/draft-trivia.json';
 
@@ -47,6 +47,13 @@ type PuestoSeleccionado = {
 };
 type PreguntaTrivia = (typeof draftTrivia)[number];
 type DificultadTrivia = PreguntaTrivia['dificultad'];
+type EntradaRanking = {
+  id: number;
+  name: string;
+  average: number;
+  remaining_budget: number;
+  created_at: string;
+};
 type EstadoTrivia =
   | { tipo: 'oferta'; pregunta: PreguntaTrivia }
   | {
@@ -230,6 +237,22 @@ export default function DraftGame() {
   );
   const [iniciado, setIniciado] = useState(false);
   const [mensajeCompartir, setMensajeCompartir] = useState('');
+  const [nombreRanking, setNombreRanking] = useState(() =>
+    typeof window === 'undefined'
+      ? ''
+      : (window.localStorage.getItem('quepartido-draft-ranking-name') ?? ''),
+  );
+  const [ranking, setRanking] = useState<EntradaRanking[]>([]);
+  const [enviandoRanking, setEnviandoRanking] = useState(false);
+  const [mensajeRanking, setMensajeRanking] = useState('');
+  const [rankingSubido, setRankingSubido] = useState(false);
+  const terminado = equipo.length === TOTAL_JUGADORES;
+  const sinPresupuesto =
+    iniciado &&
+    !terminado &&
+    puestoSeleccionado !== null &&
+    opciones.length > 0 &&
+    opciones.every((jugador) => !esAsequible(jugador, presupuesto));
 
   useEffect(() => {
     if (opcionesPendientes === null) return;
@@ -252,13 +275,21 @@ export default function DraftGame() {
     return () => window.clearTimeout(timeout);
   }, [descuentoAnimado]);
 
-  const terminado = equipo.length === TOTAL_JUGADORES;
-  const sinPresupuesto =
-    iniciado &&
-    !terminado &&
-    puestoSeleccionado !== null &&
-    opciones.length > 0 &&
-    opciones.every((jugador) => !esAsequible(jugador, presupuesto));
+  useEffect(() => {
+    if (!terminado) return;
+
+    void fetch('/api/draft-ranking')
+      .then(async (respuesta) => {
+        if (!respuesta.ok) throw new Error();
+        const datos = (await respuesta.json()) as { ranking: EntradaRanking[] };
+        setRanking(datos.ranking);
+      })
+      .catch(() => {
+        setMensajeRanking(
+          'El ranking global todavía no está disponible en este despliegue.',
+        );
+      })
+  }, [terminado]);
 
   const iniciarDraft = () => {
     setEquipo([]);
@@ -270,6 +301,8 @@ export default function DraftGame() {
     setTrivia(null);
     setPreguntasTriviaUsadas([]);
     setMensajeCompartir('');
+    setMensajeRanking('');
+    setRankingSubido(false);
     setIniciado(true);
   };
 
@@ -281,6 +314,9 @@ export default function DraftGame() {
       !iniciado ||
       terminado ||
       trivia !== null ||
+      puestoSeleccionado !== null ||
+      opcionesPendientes !== null ||
+      opciones.length > 0 ||
       puesto < 0 ||
       puesto >= CUPOS[posicion] ||
       equipo.some(
@@ -375,6 +411,59 @@ export default function DraftGame() {
       ? equipo.reduce((suma, { jugador }) => suma + jugador.rating, 0) /
         equipo.length
       : 0;
+
+  const publicarRanking = async () => {
+    if (!terminado || rankingSubido || enviandoRanking) return;
+
+    const nombre = nombreRanking.trim().replace(/\s+/g, ' ');
+    if (nombre.length < 2 || nombre.length > 24) {
+      setMensajeRanking('Ingresá un nombre de entre 2 y 24 caracteres.');
+      return;
+    }
+
+    setEnviandoRanking(true);
+    setMensajeRanking('');
+    try {
+      const respuesta = await fetch('/api/draft-ranking', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: nombre,
+          average: promedio,
+          remainingBudget: presupuesto,
+          teamIds: equipo.map(({ jugador }) => jugador.id),
+        }),
+      });
+
+      if (!respuesta.ok) {
+        const datos = (await respuesta.json()) as { error?: string };
+        throw new Error(datos.error);
+      }
+
+      window.localStorage.setItem(
+        'quepartido-draft-ranking-name',
+        nombre,
+      );
+      setRankingSubido(true);
+      setMensajeRanking('¡Tu valoración quedó publicada!');
+
+      const rankingRespuesta = await fetch('/api/draft-ranking');
+      if (rankingRespuesta.ok) {
+        const datos = (await rankingRespuesta.json()) as {
+          ranking: EntradaRanking[];
+        };
+        setRanking(datos.ranking);
+      }
+    } catch (error) {
+      setMensajeRanking(
+        error instanceof Error && error.message
+          ? error.message
+          : 'No se pudo publicar el resultado.',
+      );
+    } finally {
+      setEnviandoRanking(false);
+    }
+  };
 
   const textoParaCompartir = () => {
     const lineas = POSICIONES.map((posicion) => {
@@ -730,6 +819,84 @@ export default function DraftGame() {
                   </p>
                 </div>
               </div>
+              <div className="mx-auto mt-4 max-w-lg rounded-2xl border border-[#57132b] bg-[#10070b]/90 p-3 text-left md:p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-rose-200">
+                      Ranking global
+                    </p>
+                    <h3 className="mt-1 text-base font-black text-white">
+                      Mejor valoración
+                    </h3>
+                  </div>
+                  {rankingSubido && (
+                    <span className="rounded-full border border-emerald-300/30 bg-emerald-950/60 px-2 py-1 text-[9px] font-black uppercase tracking-wider text-emerald-200">
+                      Publicado
+                    </span>
+                  )}
+                </div>
+
+                {ranking.length > 0 ? (
+                  <ol className="mt-3 space-y-1.5">
+                    {ranking.slice(0, 5).map((entrada, indice) => (
+                      <li
+                        key={entrada.id}
+                        className="grid grid-cols-[28px_1fr_auto] items-center gap-2 rounded-lg border border-white/5 bg-black/20 px-2 py-2"
+                      >
+                        <span className="text-center text-sm font-black text-rose-200">
+                          {indice + 1}
+                        </span>
+                        <span className="truncate text-xs font-bold text-white sm:text-sm">
+                          {entrada.name}
+                        </span>
+                        <span className="text-sm font-black text-rose-100">
+                          {entrada.average.toFixed(1)}
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <p className="mt-3 rounded-lg border border-white/5 bg-black/20 p-3 text-center text-xs text-slate-400">
+                    Aún no hay resultados publicados.
+                  </p>
+                )}
+
+                {!rankingSubido && (
+                  <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
+                    <label className="sr-only" htmlFor="nombre-ranking-draft">
+                      Nombre para el ranking
+                    </label>
+                    <input
+                      id="nombre-ranking-draft"
+                      type="text"
+                      value={nombreRanking}
+                      onChange={(event) =>
+                        setNombreRanking(event.target.value.slice(0, 24))
+                      }
+                      placeholder="Tu nombre"
+                      maxLength={24}
+                      autoComplete="nickname"
+                      className="min-w-0 rounded-lg border border-[#7d1b3c] bg-[#210a13] px-3 py-2 text-sm font-bold text-white outline-none placeholder:text-slate-500 focus:border-rose-300"
+                    />
+                    <button
+                      type="button"
+                      disabled={enviandoRanking}
+                      onClick={publicarRanking}
+                      className="rounded-lg bg-[#8d1238] px-4 py-2 text-xs font-black uppercase tracking-wider text-white transition-colors hover:bg-[#a21b46] disabled:cursor-wait disabled:opacity-60"
+                    >
+                      {enviandoRanking ? 'Publicando...' : 'Subir valoración'}
+                    </button>
+                  </div>
+                )}
+                {mensajeRanking && (
+                  <p
+                    role="status"
+                    className="mt-2 text-center text-xs font-bold text-rose-100"
+                  >
+                    {mensajeRanking}
+                  </p>
+                )}
+              </div>
               <div className="mt-4 flex flex-col justify-center gap-2 sm:flex-row sm:flex-wrap md:mt-5 md:gap-3">
                 <button
                   type="button"
@@ -918,12 +1085,10 @@ function CartaJugador({
         <p className="text-base font-black leading-tight md:text-lg">
           {jugador.name}
         </p>
-        <Image
-          src="/escudo-lanus-2025.png"
-          alt=""
-          width={56}
-          height={57}
-          className="mx-auto mt-1 h-10 w-10 object-contain drop-shadow-sm md:h-14 md:w-14"
+        <PlayerPhoto
+          name={jugador.name}
+          photoId={jugador.id}
+          className="mx-auto mt-1 h-20 w-20 text-xl md:h-28 md:w-28 md:text-2xl"
         />
         <p className="mt-1 text-[9px] font-black uppercase tracking-[0.16em] opacity-70 md:text-[10px] md:tracking-[0.2em]">
           Club Atlético Lanús

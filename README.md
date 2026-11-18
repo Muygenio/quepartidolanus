@@ -20,6 +20,23 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Fotos de jugadores
+
+Guardá cada foto como un archivo PNG, JPG, JPEG o WebP en `public/jugadores/`. El nombre del
+archivo es el ID del jugador en el Draft o, para jugadores que solo aparecen en
+formaciones, su nombre en minúsculas y sin acentos, separado por guiones. Por
+ejemplo, `public/jugadores/nahuel-losada.png` o
+`public/jugadores/maximiliano-velazquez.jpg`. No hace falta editar ningún
+JSON; si falta una foto, la interfaz muestra las iniciales. Usá únicamente
+imágenes con permiso de uso.
+
+## Ranking global del Draft
+
+El ranking se guarda en Vercel Postgres. En el proyecto de Vercel, agregá una base
+de datos Postgres y vinculala al despliegue para que genere las variables de entorno
+necesarias. La tabla `draft_rankings` se crea automáticamente al consultar o publicar
+en `/api/draft-ranking`.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
